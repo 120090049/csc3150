@@ -115,7 +115,6 @@ int main(int argc, char *argv[]){
 					case 5:
 						// printf("This is the SIGTRAP signal\n");
 						break;
-					
 				}
 			}
 			else if(WIFSTOPPED(state)){ // stop signal

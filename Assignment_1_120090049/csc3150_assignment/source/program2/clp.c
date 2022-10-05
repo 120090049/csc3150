@@ -126,6 +126,7 @@ void output_info(int exit){
             printk("[program2] : child process exit normally\n");
             printk("[program2] : The return signal is 0\n");
             break;
+            
     }
     return;
 }

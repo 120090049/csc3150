@@ -94,7 +94,7 @@ int my_exec(){
 }
 
 void my_wait(pid_t pid){
-	int status;
+	static int status;
 	struct wait_opts wo;
 	struct pid *wo_pid=NULL;
 	enum pid_type type;

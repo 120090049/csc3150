@@ -1,3 +1,4 @@
 sudo insmod program2.ko
+sleep 2
 sudo rmmod program2
-sudo dmesg | tail -12
+sudo dmesg | tail -50

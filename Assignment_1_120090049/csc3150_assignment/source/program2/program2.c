@@ -14,7 +14,7 @@
 MODULE_LICENSE("GPL");
 
 static struct task_struct *mythread;
-struct wait_opts {
+static struct wait_opts {
 	enum pid_type wo_type;
 	int	wo_flags;
 	struct pid *wo_pid;
@@ -24,8 +24,7 @@ struct wait_opts {
 	wait_queue_entry_t child_wait;
 	int	notask_error;
 };
-
-
+static struct kernel_clone_args;
 // export from the kernel
 extern pid_t kernel_clone(struct kernel_clone_args *args); // kernel/fork.c
 extern int do_execve(struct filename *filename, const char __user *const __user *__argv, const char __user *const __user *__envp);
@@ -67,7 +66,7 @@ int my_fork(void *argc){
 	// printk("[program2] : The child process has pid= %d\n", getpid());
     // printk("[program2] : The parent process has pid= %d\n", getppid());
 	printk("[program2] : The child process has pid= %d\n", pid);
-    printk("[program2] : The parent process has pid= %d\n", (int) current->pid);
+    printk("[program2] : This is the parent process, pid= %d\n", (int) current->pid);
 
 // STEP 5 wait until child process terminates 
 	my_wait(pid);
@@ -78,16 +77,20 @@ int my_fork(void *argc){
 // STEP 4 child process executes the test program
 int my_exec(){
 	int output;
-	// command looks like: /.../filename (null)
-	char file_path[] = "/home/vagrant/csc3150/Assignment_1_120090049/csc3150_assignment/source/program2/test"; // pointer of the file path
+	char* file_path = "/home/vagrant/csc3150/Assignment_1_120090049/csc3150_assignment/source/program2/test"; // pointer of the file path
 	struct filename *my_file_name = getname_kernel(file_path);
+	// printk("NAME!!!: %d", IS_ERR(my_file_name));
 	// const char *const *__argv;
 	// const char *const *__envp;
-	const char* argv[] = {NULL};
-    const char* envp[] = {NULL};
 	printk("[program2] : child process");
-	output = do_execve(my_file_name, argv, envp);
-	return 0;
+	output = do_execve(my_file_name, NULL, NULL);
+	// printk("OUTPUT!!!: %d", output);
+	// return 0;
+	if (!output) {
+        return 0;
+    } else {
+        do_exit(output);
+    }
 }
 
 void my_wait(pid_t pid){
@@ -107,10 +110,10 @@ void my_wait(pid_t pid){
 
 	int a;
 	a=do_wait(&wo);
-	printk("[program2] : get SIGTERM signal: %d\n", *(wo.wo_stat));
+	printk("[program2] : get SIGTERM signal: %d\n", (wo.wo_stat));
 	// [ 3769.391604] [program2] : get SIGTERM signal
 	// [ 3769.391605] [program2] : child process terminated
-	printk("The return value is %d\n", *(wo.wo_stat));
+	printk("The return value is %d\n", (wo.wo_stat));
 	
 
 	put_pid(wo_pid);
@@ -125,11 +128,12 @@ static int __init program2_init(void){
 	
 // STEP 2 create kernel thread
 	/* create a kernel thread to run my_fork */
+	struct task_struct *myThread;
 	myThread = kthread_create(&my_fork, NULL, "MyThread");
 	// wake up new thread if ok
 	if(!IS_ERR(myThread)){
 		printk("[program2] : module_init kthread start\n");
-        wake_up_process(task);
+        wake_up_process(myThread);
 	}
 	
 	return 0;

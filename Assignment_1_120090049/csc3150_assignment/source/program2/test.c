@@ -89,11 +89,11 @@ int main(int argc,char* argv[]){
 
 
 	// SIGTERM  15
-	// printf("------------CHILD PROCESS START------------\n");
-	// printf("This is the SIGTERM program\n\n");
-	// raise(SIGTERM);
-	// sleep(5);
-	// printf("------------CHILD PROCESS END------------\n");
+	printf("------------CHILD PROCESS START------------\n");
+	printf("This is the SIGTERM program\n\n");
+	raise(SIGTERM);
+	sleep(5);
+	printf("------------CHILD PROCESS END------------\n");
 
 	// SIGTRAP 133
 	// printf("------------CHILD PROCESS START------------\n");

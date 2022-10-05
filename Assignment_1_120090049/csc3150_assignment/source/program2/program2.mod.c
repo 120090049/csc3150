@@ -34,14 +34,14 @@ __used __section("__versions") = {
 	{ 0x9992f70, "put_pid" },
 	{ 0xf37409c9, "do_wait" },
 	{ 0xc4f36f57, "find_get_pid" },
-	{ 0x952664c5, "do_exit" },
 	{ 0x2d15d1b6, "do_execve" },
 	{ 0xc5850110, "printk" },
 	{ 0x85416d23, "getname_kernel" },
+	{ 0xf9a482f9, "msleep" },
 	{ 0xbdfb6dbb, "__fentry__" },
 };
 
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "D56ABB5CE3E119243498D1B");
+MODULE_INFO(srcversion, "97C4CB0D439778ADB379773");

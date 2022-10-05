@@ -10,6 +10,7 @@
 #include <linux/kmod.h>
 #include <linux/fs.h>
 #include <linux/signal.h>
+#include <linux/delay.h>
 
 MODULE_LICENSE("GPL");
 
@@ -65,8 +66,8 @@ int my_fork(void *argc){
 	pid_t pid = kernel_clone(&kc_args); // Fork successfully: pid of child process
 	// printk("[program2] : The child process has pid= %d\n", getpid());
     // printk("[program2] : The parent process has pid= %d\n", getppid());
-	printk("[program2] : The child process has pid= %d\n", pid);
-    printk("[program2] : This is the parent process, pid= %d\n", (int) current->pid);
+	printk("[program2] : The child process has pid = %d\n", pid);
+    printk("[program2] : This is the parent process, pid = %d\n", (int) current->pid);
 
 // STEP 5 wait until child process terminates 
 	my_wait(pid);
@@ -76,21 +77,21 @@ int my_fork(void *argc){
 
 // STEP 4 child process executes the test program
 int my_exec(){
+	msleep(1);
 	int output;
 	char* file_path = "/home/vagrant/csc3150/Assignment_1_120090049/csc3150_assignment/source/program2/test"; // pointer of the file path
 	struct filename *my_file_name = getname_kernel(file_path);
 	// printk("NAME!!!: %d", IS_ERR(my_file_name));
 	// const char *const *__argv;
 	// const char *const *__envp;
-	printk("[program2] : child process");
+	printk("[program2] : child process\n");
 	output = do_execve(my_file_name, NULL, NULL);
-	// printk("OUTPUT!!!: %d", output);
-	// return 0;
-	if (!output) {
-        return 0;
-    } else {
-        do_exit(output);
-    }
+	return 0;
+	// if (!output) {
+    //     return 0;
+    // } else {
+    //     do_exit(output);
+    // }
 }
 
 void my_wait(pid_t pid){
@@ -103,18 +104,77 @@ void my_wait(pid_t pid){
 
 	wo.wo_type=type;
 	wo.wo_pid=wo_pid;
-	wo.wo_flags=WEXITED;
+	wo.wo_flags=WUNTRACED|WEXITED;
 	wo.wo_info=NULL;
 	wo.wo_stat=(int __user*)&status;
 	wo.wo_rusage=NULL;
 
 	int a;
 	a=do_wait(&wo);
-	printk("[program2] : get SIGTERM signal: %d\n", (wo.wo_stat));
-	// [ 3769.391604] [program2] : get SIGTERM signal
-	// [ 3769.391605] [program2] : child process terminated
-	printk("The return value is %d\n", (wo.wo_stat));
-	
+			
+	switch (wo.wo_stat){
+		// ./program1 ./abort #6
+		case 134:
+			printk("[program2] : get SIGTERM signal\n");
+			break;
+		// ./program1 ./alarm #14
+		case 14:
+			printk("[program2] : get SIGALARM signal\n");
+			break;
+		// ./program1 ./bus   #7
+		case 135:
+			printk("[program2] : get SIGBUS signal\n");
+			break;
+		// ./program1 ./floating #8
+		case 136:
+			printk("[program2] : get SIGFPE signal\n");
+			break;
+		// ./program1 ./hangup #1
+		case 1:
+			printk("[program2] : get SIGHUP signal\n");
+			break;
+		// ./program1 ./illegal_instr #4
+		case 132:
+			printk("[program2] : get SIGILL signal\n");
+			break;
+		// ./program1 ./interrupt #2
+		case 2:
+			printk("[program2] : get SIGINT signal\n");
+			break;
+		// ./program1 ./kill #9
+		case 9:
+			printk("[program2] : get SIGKILL signal\n");
+			break;
+		// ./program1 ./pipe #13
+		case 13:
+			printk("[program2] : get SIGPIPE signal\n");
+			break;
+		// ./program1 ./quit #3
+		case 131:
+			printk("[program2] : get SIGQUIT signal\n");
+			break;
+		// ./program1 ./segment_fault #11
+		case 139:
+			printk("[program2] : get SIGSEGV signal\n");
+			break;
+		// ./program1 ./terminate #15
+		case 15:
+			printk("[program2] : get SIGTERM signal\n");
+			break;
+		// ./program1 ./trap #5
+		case 133:
+			printk("[program2] : get SIGTRAP signal\n");
+			break;
+		case 25600:
+			printk("[program2] : This is the normal program\n");
+			break;
+		case 4991:
+			printk("[program2] : get SIGSTOP signal\n");
+			break;
+	}
+
+	printk("[program2] : child process terminated\n");
+	printk("[program2] : The return signal is %d\n", (wo.wo_stat));
 
 	put_pid(wo_pid);
 
@@ -140,7 +200,7 @@ static int __init program2_init(void){
 }
 
 static void __exit program2_exit(void){
-	printk("[program2] : Module_exit\n");
+	printk("[program2] : module_exit./my\n");
 }
 
 module_init(program2_init);

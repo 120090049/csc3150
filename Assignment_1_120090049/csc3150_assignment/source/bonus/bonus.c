@@ -6,79 +6,113 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#define BUFFSIZE_INFO 50
 
 struct pid_ppid{
     int pid;
     int ppid;
+    char name[32];
+    char status[8];
 };
 struct pid_ppid process_list[100];
-void get_pid();
+void print_result(FILE *fp);
+int get_pid();
 
 int main(){
-    // get_pid();
-    char pid_name[16];
-    int ppid;
-    exe_cmd(1, pid_name, &ppid);
+    int pid_num = get_pid();
+    for (int i=0; i<pid_num; i++){
+        printf("pid_name: %s\n", process_list[i].name);
+        printf("pid_status: %s\n", process_list[i].status);
+        printf("pid: %d\n", process_list[i].pid);
+        printf("ppid: %d\n\n", process_list[i].ppid);
+    }
+    printf("\n%d", pid_num);
 }
 
+
 // execute the "cat state" command and read the second and the fourth result
-void exe_cmd(int pid, char* pid_name, int* ppid){
-    // char buf_ps[1024];   
-    // char ps[1024]={0};   
-    // FILE *ptr;   
-    // strcpy(ps, cmd); 
+void exe_cmd(int pid, char* pid_name, char* ppid, char* status){
  
     char str[8];
     sprintf(str, "%d", pid);
-    char dir[32] = "/proc/";
+    char dir[32] = "cd /proc/";
     strcat(dir, str);
-    printf("%s", dir);   
-    // if((ptr=popen(ps, "r"))!=NULL)   
-    // {   
-    //     while(fgets(buf_ps, 1024, ptr)!=NULL)   
-    //     {   
-    //        if(strlen(result)>1024)   
-    //            break;   
-    //     }   
-    //     pclose(ptr);   
-    //     ptr = NULL;   
-    // }   
+    FILE *cmd_pt = NULL;
+    // strcat(dir, "; cat stat");
+    strcat(dir, "; more status");
+    cmd_pt = popen(dir, "r");
+    if(!cmd_pt) {
+        perror("popen");
+        exit(EXIT_FAILURE);
+    }
+    char buf[64];
+    fgets(buf, sizeof(buf) - 1, cmd_pt); // name
+    strcpy(pid_name, buf);
+
+    fgets(buf, sizeof(buf) - 1, cmd_pt);
+    fgets(buf, sizeof(buf) - 1, cmd_pt); // state
+    strcpy(status, buf);
+    fgets(buf, sizeof(buf) - 1, cmd_pt);
+    fgets(buf, sizeof(buf) - 1, cmd_pt);
+    fgets(buf, sizeof(buf) - 1, cmd_pt);
+    fgets(buf, sizeof(buf) - 1, cmd_pt); // ppid
+    strcpy(ppid, buf);
+    // // start to split
+    // char* temp = strtok(buf, " "); // pid
+    // temp = strtok(NULL, " "); // (name)
+
+    // strcpy(pid_name, temp); // get the name 
+    
+
+	// // printf("%s\n", pid_name);
+	// temp = strtok(NULL, " "); // S
+    // temp = strtok(NULL, " "); // ppid
+    // *ppid = atoi(temp);
+
+    pclose(cmd_pt);
 }
 
-// void get_pid()
-// {   
-//     pid_num = 0;
-//     DIR * dir;
-//     dir = opendir("/proc");
-//     struct dirent * ptr;
-//     while(ptr=readdir(dir_ptr))
-//     {
-//         pid_num ++;
-//         //memcpy(name,direntp->d_name,strlen(direntp->d_name)+1);
-//         pid=atoi(ptr->d_name);
-//         if(pid!=0)
-//         {
-//             process_list[pid_num].pid = pid;
-            
-//             sprintf(pidStr,"%d",pid);
-//             strcat(process_path,pidStr);
-//             strcat(process_path,stat);
-//             //process_path中为指定process的对应stat文件路径
+int get_pid()
+{   
+    int pid_num = 0;
+    DIR * dir;
+    dir = opendir("/proc");
+    struct dirent * ptr;
+    while(ptr=readdir(dir))
+    {
+        //
+        int pid=atoi(ptr->d_name);
+        if (pid != 0){            
+            char pid_name[32];
+            char ppid_string[32];
+            char status[32];
+            exe_cmd(pid, pid_name, ppid_string, status);
 
-//             int ppid=getPPid(process_path);//返回-1表示解析出错
-//             if(ppid!=-1)
-//                 processInfos[number_process++].ppid=ppid;
-//             else
-//                 number_process++;
+            // pid name
+            // printf("%s\n", ppid_string);
+            // printf("%s\n", ppid_status);
+            sscanf(pid_name, "%*s\t%s",pid_name);
 
-//             //重置process_path
-//             process_path[6]=0;
-//             //printf("%s\n",process_path);
-//         }
-//     }
-//     printf("the number of process is %d\n",number_process);
-// }
+            sscanf(ppid_string, "%*s\t%s",ppid_string);
+            int ppid = atoi(ppid_string);
+
+            sscanf(status, "%*s\t%s",status);
+        
+            // remove the "()" of the "(pid_name)"
+            // char* temp = strtok(pid_name, "("); 
+            // temp = strtok(temp, ")"); 
+
+            process_list[pid_num].pid = pid;
+            process_list[pid_num].ppid = ppid;
+            strcpy(process_list[pid_num].status, status);
+            strcpy(process_list[pid_num].name, pid_name);
+            pid_num ++;
+        }
+        else{
+            continue;
+        }
+    }
+    return pid_num;
+}
 
 
 

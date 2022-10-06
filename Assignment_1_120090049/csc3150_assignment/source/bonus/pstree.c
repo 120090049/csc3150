@@ -12,7 +12,6 @@
 struct pinfo
 {
     int pid;
-    
     int ppid;
 };
 

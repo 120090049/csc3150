@@ -3,15 +3,16 @@
 #include <unistd.h>
 #include <string.h>
 #include <iostream>
+#include <string>
+#include <vector>
+#include <sstream>
+
 using namespace std;
 int main(void)
 {   
-    // printf("----")
-    // printf("|")
-    // ─ ├ ┬ └
-    int clp[20];
-    clp[0] = 1;
-    clp[1] = 2;
-    cout << sizeof(clp)/sizeof;
+    int clp = 10;
+    stringstream ss;
+    ss << clp;
+    cout << ss.str().length();
 }
 

@@ -27,14 +27,21 @@ void print_result(FILE *fp);
 int get_pid();
 void add_to_thread(int pid);
 void create_tree();
-void print_tree(struct pid_ppid *node, vector<int>rec, bool direct, bool show_num);
+void print_tree(struct pid_ppid *node, vector<int>rec, bool direct, int show_num);
 
-int main(){
+int main(int argc, char* argv[]){
+    int show_num;
+    for (int i = 1; i < argc; ++ i) {
+		if (strcmp(argv[i], "-p") == 0) show_num = 0;
+		else if (strcmp(argv[i], "-c") == 0) show_num = 1;
+        // else if (strcmp(argv[i], "-g") == 0) show_num = 2;
+		else {
+			puts("errof command");
+			exit(0);
+		}
+	}
     int pid_num = get_pid();
-    // printf("\n%d", pid_num);
-    // for (int i=0; i<thread_list.size(); i++){
-    //     cout << thread_list[i] << "  ";
-    // }
+
     // create tree
     create_tree();
     struct pid_ppid root_process;
@@ -46,13 +53,9 @@ int main(){
     // struct pid_ppid son3 = (*son2.sons[0]);
     // cout << son3.name.length() << endl;
     vector<int> rec;
-    print_tree(&root_process, rec, 1, 0);
-    // for (int i=0; i<process_list.size(); i++){
-    //     cout << process_list[i].name << endl;
-    //     // printf("pid_status: %s\n", process_list[i].status);
-    //     printf("pid: %d\n", process_list[i].pid);
-    //     printf("ppid: %d\n\n", process_list[i].ppid);
-    // }
+    cout << "-----------------------------------------" << endl;
+    print_tree(&root_process, rec, 1, show_num);
+
 }
 
 void create_tree(){
@@ -81,9 +84,9 @@ void create_tree(){
 
 
 
-void print_tree(struct pid_ppid *node, vector<int>rec, bool direct, bool show_num){
+void print_tree(struct pid_ppid *node, vector<int>rec, bool direct, int show_num){
 
-    if(show_num){
+    if(show_num==0){ // pstree -g
         int len = node->name.length();
         int pid = node->pid;
         stringstream ss;
@@ -93,7 +96,7 @@ void print_tree(struct pid_ppid *node, vector<int>rec, bool direct, bool show_nu
             cout << "+--" << node->name << "(" << ss.str() << ")";
         } 
         else{
-            if (rec.size() > 1){
+            if (rec.size() > 1){  //    |    |    +--node
                 for (int i=0; i<rec.size()-2; i++){
                     if (i == 0){
                         for (int j = 0; j<rec[i]; j++){
@@ -136,7 +139,7 @@ void print_tree(struct pid_ppid *node, vector<int>rec, bool direct, bool show_nu
             }
         }
     }
-    else{
+    else if (show_num==1){ // pstree -c
         int len = node->name.length();
         rec.push_back(len+3);
         if (direct){
@@ -171,6 +174,59 @@ void print_tree(struct pid_ppid *node, vector<int>rec, bool direct, bool show_nu
                 // cout <<endl <<  clp << "serssssssssssssssssssssss" << endl;
             }
             cout << "+--" << node->name;
+        }
+        if (node->sons.empty()){
+            cout << endl;
+        }
+        else{
+            for (int i=0; i<node->sons.size(); i++){
+                if (i==0){
+                    print_tree(node->sons[i], rec, 1, show_num); // direct
+                }
+                else{
+                    print_tree(node->sons[i], rec, 0, show_num); // non-direct
+                }
+            }
+        }
+    }
+    else if (show_num==2){ // pstree -p
+        int len = node->name.length();
+        int pid = node->ppid;
+        stringstream ss;
+        ss << pid;
+        rec.push_back(len+3+2+ss.str().length());
+        if (direct){
+            cout << "+--" << node->name << "(" << ss.str() << ")";
+        } 
+        else{
+            if (rec.size() > 1){  //    |    |    +--node
+                for (int i=0; i<rec.size()-2; i++){
+                    if (i == 0){
+                        for (int j = 0; j<rec[i]; j++){
+                            cout << " ";
+                        }
+                    }
+                    else{
+                        for (int j = 1; j<rec[i]; j++){
+                            cout << " ";
+                        }
+                    }
+                    cout << "|";
+                }
+                int clp ;
+                if (rec.size()==2){
+                    for (int k = 0; k<rec[rec.size()-2]; k++){
+                        cout << " ";
+                    }
+                }
+                else{
+                    for (int k = 1; k<rec[rec.size()-2]; k++){
+                        cout << " ";
+                    }
+                }
+                // cout <<endl <<  clp << "serssssssssssssssssssssss" << endl;
+            }
+            cout << "+--" << node->name<< "(" << ss.str() << ")";
         }
         if (node->sons.empty()){
             cout << endl;

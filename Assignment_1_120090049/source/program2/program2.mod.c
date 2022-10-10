@@ -31,7 +31,6 @@ __used __section("__versions") = {
 	{ 0xd9f4f6f7, "kernel_clone" },
 	{ 0x8b0c0dda, "current_task" },
 	{ 0xc959d152, "__stack_chk_fail" },
-	{ 0x9992f70, "put_pid" },
 	{ 0xf37409c9, "do_wait" },
 	{ 0xc4f36f57, "find_get_pid" },
 	{ 0x2d15d1b6, "do_execve" },
@@ -44,4 +43,4 @@ __used __section("__versions") = {
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "62730042C35B381B3BABCF6");
+MODULE_INFO(srcversion, "8BCD57F503D719702CF64FB");

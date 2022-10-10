@@ -44,7 +44,8 @@ int myfork(void *argc)
 	// initialize the date structure related to signal handling
 	// the handler keeps track of the shared pending signals
 	struct k_sigaction *ksa_handler = &current->sighand->action[0];
-	for (int k = 0; k < _NSIG; k++) {
+	int k;
+	for (k = 0; k < _NSIG; k++) {
 		ksa_handler->sa.sa_handler = SIG_DFL;
 		ksa_handler->sa.sa_flags = 0;
 		ksa_handler->sa.sa_restorer = NULL;
@@ -195,10 +196,7 @@ static int __init program2_init(void)
 	myThread = kthread_create(&myfork, NULL, "MyThread");
 	// wake up new thread if ok
 	if (!IS_ERR(myThread)) {
-		printk("[program2] : mod
-		
-		
-		ule_init kthread start\n");
+		printk("[program2] : module_init kthread start\n");
 		wake_up_process(myThread);
 	}
 

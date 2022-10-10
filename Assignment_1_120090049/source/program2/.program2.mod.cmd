@@ -1,0 +1,1 @@
+cmd_/home/vagrant/csc3150/Assignment_1_120090049/source/program2/program2.mod := { echo  /home/vagrant/csc3150/Assignment_1_120090049/source/program2/program2.o;  echo; } > /home/vagrant/csc3150/Assignment_1_120090049/source/program2/program2.mod

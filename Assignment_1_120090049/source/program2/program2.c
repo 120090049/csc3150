@@ -79,7 +79,7 @@ int my_fork(void *argc){
 int my_exec(){
 	msleep(1);
 	int output;
-	char* file_path = "/home/vagrant/csc3150/Assignment_1_120090049/csc3150_assignment/source/program2/test"; // pointer of the file path
+	char* file_path = "/home/vagrant/csc3150/Assignment_1_120090049/source/program2/test"; // pointer of the file path
 	struct filename *my_file_name = getname_kernel(file_path);
 	// printk("NAME!!!: %d", IS_ERR(my_file_name));
 	// const char *const *__argv;

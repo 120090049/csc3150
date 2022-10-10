@@ -34,22 +34,22 @@ extern int do_execve(struct filename *filename,
 extern struct filename *getname_kernel(const char *filename);
 extern long do_wait(struct wait_opts *wo);
 
-int my_fork(void *);
-int my_exec(void);
-void my_wait(pid_t);
+int myfork(void *);
+int myexe(void);
+void mywait(pid_t);
 
 //implement fork function
-int my_fork(void *argc)
+int myfork(void *argc)
 {
-	//set default sigaction for current process
-	int i;
-	struct k_sigaction *k_action = &current->sighand->action[0];
-	for (i = 0; i < _NSIG; i++) {
-		k_action->sa.sa_handler = SIG_DFL;
-		k_action->sa.sa_flags = 0;
-		k_action->sa.sa_restorer = NULL;
-		sigemptyset(&k_action->sa.sa_mask);
-		k_action++;
+	// initialize the date structure related to signal handling
+	// the handler keeps track of the shared pending signals
+	struct k_sigaction *ksa_handler = &current->sighand->action[0];
+	for (int k = 0; k < _NSIG; k++) {
+		ksa_handler->sa.sa_handler = SIG_DFL;
+		ksa_handler->sa.sa_flags = 0;
+		ksa_handler->sa.sa_restorer = NULL;
+		sigemptyset(&ksa_handler->sa.sa_mask);
+		ksa_handler++;
 	}
 	// STEP 3 Fork a process
 	/* fork a process using kernel_clone or kernel_thread */
@@ -59,7 +59,7 @@ int my_fork(void *argc)
 		.flags =
 			SIGCHLD, // How to clone the child process. When executing fork(), it is set as SIGCHILD.
 		.stack =
-			(unsigned long)&my_exec, // Specifies the location of the stack used by the child process.
+			(unsigned long)&myexe, // Specifies the location of the stack used by the child process.
 		.stack_size = 0, //Normally set as 0 because it is unused.
 		.parent_tid =
 			NULL, // Used for clone() to point to user space memory in parent process address space. It is set as NULL when executing fork();
@@ -73,40 +73,31 @@ int my_fork(void *argc)
 	// go to STEP 4 (child process executes the test program)
 	pid_t pid = kernel_clone(
 		&kc_args); // Fork successfully: pid of child process
-	// printk("[program2] : The child process has pid= %d\n", getpid());
-	// printk("[program2] : The parent process has pid= %d\n", getppid());
 	printk("[program2] : The child process has pid = %d\n", pid);
 	printk("[program2] : This is the parent process, pid = %d\n",
 	       (int)current->pid);
 
 	// STEP 5 wait until child process terminates
-	my_wait(pid);
+	mywait(pid);
 
 	return 0;
 }
 
 // STEP 4 child process executes the test program
-int my_exec()
+int myexe()
 {
 	msleep(1);
 	int output;
-	char *file_path =
-		"/home/vagrant/csc3150/Assignment_1_120090049/source/program2/test"; // pointer of the file path
-	struct filename *my_file_name = getname_kernel(file_path);
-	// printk("NAME!!!: %d", IS_ERR(my_file_name));
-	// const char *const *__argv;
-	// const char *const *__envp;
+	// char *file_path =
+	// 	"/home/vagrant/csc3150/Assignment_1_120090049/source/program2/test"; 
+	char *file_path = "/tmp/test"; // pointer of the file path
+	struct filename *my_file_name = getname_kernel(file_path); 
 	printk("[program2] : child process\n");
 	output = do_execve(my_file_name, NULL, NULL);
 	return 0;
-	// if (!output) {
-	//     return 0;
-	// } else {
-	//     do_exit(output);
-	// }
 }
 
-void my_wait(pid_t pid)
+void mywait(pid_t pid)
 {
 	static int status;
 	struct wait_opts wo;
@@ -189,8 +180,6 @@ void my_wait(pid_t pid)
 	printk("[program2] : child process terminated\n");
 	printk("[program2] : The return signal is %d\n", (wo.wo_stat));
 
-	put_pid(wo_pid);
-
 	return;
 }
 
@@ -201,12 +190,15 @@ static int __init program2_init(void)
 	printk("[program2] : module_init create kthread start\n");
 
 	// STEP 2 create kernel thread
-	/* create a kernel thread to run my_fork */
+	/* create a kernel thread to run myfork */
 	struct task_struct *myThread;
-	myThread = kthread_create(&my_fork, NULL, "MyThread");
+	myThread = kthread_create(&myfork, NULL, "MyThread");
 	// wake up new thread if ok
 	if (!IS_ERR(myThread)) {
-		printk("[program2] : module_init kthread start\n");
+		printk("[program2] : mod
+		
+		
+		ule_init kthread start\n");
 		wake_up_process(myThread);
 	}
 

@@ -33,32 +33,49 @@ void print_tree(struct pid_ppid *node, vector<int> rec, bool direct,
 int main(int argc, char *argv[])
 {
 	int show_num;
+	if (argc == 1){
+		cout << "Sorry, I don't realize the ""pstree"", Please type ""./pstree -p/-c/-V"" instead." << endl;
+	}
 	for (int i = 1; i < argc; ++i) {
-		if (strcmp(argv[i], "-p") == 0)
+		if (strcmp(argv[i], "-p") == 0){
 			show_num = 0;
-		else if (strcmp(argv[i], "-c") == 0)
+			int pid_num = get_pid();
+			// create tree
+			create_tree();
+			struct pid_ppid root_process;
+			root_process = process_list[0];
+			vector<int> rec;
+			cout << "\n\n" << endl;
+			print_tree(&root_process, rec, 1, show_num);
+		}
+
+		else if (strcmp(argv[i], "-c") == 0){
 			show_num = 1;
+			int pid_num = get_pid();
+			// create tree
+			create_tree();
+			struct pid_ppid root_process;
+			root_process = process_list[0];
+			vector<int> rec;
+			cout << "\n\n" << endl;
+			print_tree(&root_process, rec, 1, show_num);
+		}
+		else if (strcmp(argv[i], "-V") == 0)
+		{
+			cout << "pstree (PSmisc) 22.21\n\
+Copyright (C) 1993-2009 Werner Almesberger and Craig Small\n\n\
+PSmisc comes with ABSOLUTELY NO WARRANTY.\n\
+This is free software, and you are welcome to redistribute it under\n\
+the terms of the GNU General Public License.\n\
+For more information about these matters, see the files named COPYING.\n";
+		}
 		// else if (strcmp(argv[i], "-g") == 0) show_num = 2;
 		else {
 			puts("errof command");
 			exit(0);
 		}
 	}
-	int pid_num = get_pid();
-
-	// create tree
-	create_tree();
-	struct pid_ppid root_process;
-	root_process = process_list[0];
-	// struct pid_ppid son1 = (*root_process.sons[0]);
-	// cout << son1.pid << endl;
-	// struct pid_ppid son2 = (*root_process.sons[15]);
-	// cout << son2.pid << endl;
-	// struct pid_ppid son3 = (*son2.sons[0]);
-	// cout << son3.name.length() << endl;
-	vector<int> rec;
-	cout << "-----------------------------------------" << endl;
-	print_tree(&root_process, rec, 1, show_num);
+	
 }
 
 void create_tree()

@@ -3,5 +3,8 @@
         "iostream": "cpp",
         "sstream": "cpp",
         "ostream": "cpp"
-    }
+    },
+    "editor.formatOnSave": true,
+    "clang-format.executable": "./.clang-format",
+    "clang-format.fallbackStyle": "/usr/bin/clang-format"
 }

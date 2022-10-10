@@ -68,6 +68,7 @@ int my_fork(void *argc)
 		.tls = 0, // Set thread local storage.
 		.exit_signal = SIGCHLD,
 	};
+
 	/* execute a test program in child process */
 	// go to STEP 4 (child process executes the test program)
 	pid_t pid = kernel_clone(

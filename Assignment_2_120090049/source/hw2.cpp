@@ -80,7 +80,7 @@ void *logs_move( void *t ){
 		pthread_mutex_unlock(&map_mut);
 		usleep(TIME);
 	}
-	printf("2\n");
+	// printf("2\n");
 	pthread_exit(NULL);
 	/*  Check keyboard hits, to change frog's position or quit the game. */
 
@@ -112,7 +112,7 @@ void *keyboard_ctr(void *t){
 			pthread_mutex_unlock(&map_mut);
 		}
 	}
-	printf("3\n");
+	// printf("3\n");
 	pthread_exit(NULL);
 }
 

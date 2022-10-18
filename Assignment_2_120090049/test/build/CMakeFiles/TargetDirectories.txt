@@ -1,3 +1,0 @@
-/home/vagrant/csc3150/Assignment_2_120090049/test/build/CMakeFiles/edit_cache.dir
-/home/vagrant/csc3150/Assignment_2_120090049/test/build/CMakeFiles/rebuild_cache.dir
-/home/vagrant/csc3150/Assignment_2_120090049/test/build/CMakeFiles/out.dir

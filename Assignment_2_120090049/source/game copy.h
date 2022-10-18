@@ -47,7 +47,7 @@ public:
 	void update_screen(void){
         // printf("%d", this->num);
         // if (!state){
-            printf("\033[1;1H\033[2J\33[?25l"); // hide the cursor + clear all +　move cursor to the top 
+            printf("\033[1;1H\033[2J\33[?25l"); // clear all +　move cursor to the top + hide the cursor
             int i = 0;
             for( i = 0; i <= ROW; ++i)	
                 puts( this->map[i] );

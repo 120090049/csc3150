@@ -5,9 +5,6 @@
 #include <curses.h>
 
 #include <stdlib.h>
-#include <iostream>
-using namespace std;
-
 
 #define NUM_THREADS 3
 #define TCOUNT      10
@@ -59,10 +56,12 @@ void *watch_count(void *idp)
 
 int main (int argc, char *argv[]){
 
-    int i = 2;
-    if (i){
-        printf("fuckk");
-        cout << endl << !i;
-    }
+    std::cout <<  (rand() % 9 + 8) << std::endl;
+    std::cout <<  (rand() % 9 + 8) << std::endl;
+    std::cout <<  (rand() % 9 + 8) << std::endl;
+    std::cout <<  (rand() % 9 + 8) << std::endl;
+    std::cout <<  (rand() % 9 + 8) << std::endl;
+    std::cout <<  (rand() % 9 + 8) << std::endl;
+    std::cout <<  (rand() % 9 + 8) << std::endl;
     return 0;
 }

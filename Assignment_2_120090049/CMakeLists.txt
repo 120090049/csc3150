@@ -7,6 +7,4 @@ link_libraries(pthread)
 
 add_executable(CSC3150_Assignment_2
         source/hw2.cpp
-        source/game.h
-        source/frog.h 
-        source/logs.h)
+        source/game.h)

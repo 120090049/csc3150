@@ -24,9 +24,11 @@ public:
     int x;
     int y;
     char (*map)[COLUMN];
-    
-	Frog(char mapp[ROW+10][COLUMN]) {
+    // int (*logs_pos)[2];
+
+	Frog(char mapp[ROW+10][COLUMN], int log[9][2]) {
         this->map = mapp;
+        // this->logs_pos = log;
     }
 
     void init_frog(int x, int y)
@@ -39,32 +41,36 @@ public:
     }
 
     void up(){
-        this->y --;
-    }
-    void down(){
-        this->y ++;
-    }
-    void left(){
         this->x --;
     }
-    void right(){
+    void down(){
         this->x ++;
     }
-
+    void left(){
+        this->y --;
+    }
+    void right(){
+        this->y ++;
+    }
+    // x-row y-column
     int move(char key){
-        // int pre_x, pre_y;
-        // pre_x = this->x;
-        // pre_y = this->y;
+        int pre_x, pre_y;
+        pre_x = this->x;
+        pre_y = this->y;
         switch (key)
         {
             case 'W':
             case 'w':
-                this->up();
+                if (this->x > 0){
+                    this->up();
+                }
                 break;
 
             case 'S':
             case 's':
-                this->down();
+                if (this->x < 10){
+                    this->down();
+                }
                 break;
             
             case 'A':
@@ -80,15 +86,19 @@ public:
                 break;
         }
 
-        if (this->y == 10) // one the back
+        if (this->x == 10) // one the back
         {
+            this->map[pre_x][pre_y] = '|';
             this->map[this->x][this->y] = '0';
             return 0;
         }
-        if (this->y == 0) // reach the other side
+        else if (this->x == 0) // reach the other side and WIN !!!
         {
             this->map[this->x][this->y] = '0';
             return 1;
+        }
+        else{
+
         }
     }
 };

@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/vagrant/csc3150/Assignment_2_120090049/source/frog.h
+/home/vagrant/csc3150/Assignment_2_120090049/source/game.h
 stdio.h
 -
 stdlib.h
@@ -27,30 +27,6 @@ fcntl.h
 -
 iostream
 -
-
-/home/vagrant/csc3150/Assignment_2_120090049/source/game.h
-stdio.h
--
-stdlib.h
--
-pthread.h
--
-string.h
--
-unistd.h
--
-time.h
--
-curses.h
--
-termios.h
--
-fcntl.h
--
-logs.h
-/home/vagrant/csc3150/Assignment_2_120090049/source/logs.h
-frog.h
-/home/vagrant/csc3150/Assignment_2_120090049/source/frog.h
 
 /home/vagrant/csc3150/Assignment_2_120090049/source/hw2.cpp
 stdio.h
@@ -71,30 +47,8 @@ termios.h
 -
 fcntl.h
 -
-iostream
--
 game.h
 /home/vagrant/csc3150/Assignment_2_120090049/source/game.h
-logs.h
-/home/vagrant/csc3150/Assignment_2_120090049/source/logs.h
-
-/home/vagrant/csc3150/Assignment_2_120090049/source/logs.h
-stdio.h
--
-stdlib.h
--
-pthread.h
--
-string.h
--
-unistd.h
--
-time.h
--
-curses.h
--
-termios.h
--
-fcntl.h
+iostream
 -
 

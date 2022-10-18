@@ -17,10 +17,11 @@
 class Logs {
 public:
     char (*map)[COLUMN];
-	int logs_pos[9][2];
+	int (*logs_pos)[2];
 
-	Logs(char mapp[ROW+10][COLUMN]) {
+	Logs(char mapp[ROW+10][COLUMN], int log[9][2]) {
         this->map = mapp;
+        this->logs_pos = log;
 	}
     
     void init_logs(void){
@@ -57,6 +58,8 @@ public:
         }
         return;
     }
+    
+    // this function is used to update the maps according to the logs_pos
     void update_logs(void){
         int i , j ; 
         for( i = 1; i < ROW; ++i ){	

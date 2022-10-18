@@ -8,23 +8,24 @@
 #include <termios.h>
 #include <fcntl.h>
 
-#include "game.h"
-
 #include <iostream>
 using namespace std;
 
+#include "game.h"
+#include "logs.h"
 
 #define ROW 10
 #define COLUMN 50 
-#define TIME 90000
+#define TIME 50000
 
 pthread_mutex_t map_mut;
 pthread_mutex_t key_board_mut;
 pthread_cond_t end_game;
 
 static char map[ROW+10][COLUMN] ; 
-int STATE;  //0 alive //1 died //2 quit //3 win
-Game *game = new Game(map);
+static int log[9][2];
+
+Game *game = new Game(map, log);
 
 // struct Node{
 // 	int x , y; 
@@ -65,18 +66,15 @@ int kbhit(void){
 
 
 void *logs_move( void *t ){
+
 	/*  Move the logs  */
 	while (true){
-		// if (STATE) break;
+		// printf("1\n");
 		pthread_mutex_lock(&map_mut);
-		STATE = game->move_logs();
-		game->update_logs();
+		game->logs->move_logs();
+		game->logs->update_logs();
+		
 		game->update_screen();
-		if (STATE) {
-			pthread_cond_signal(&end_game);
-			pthread_mutex_unlock(&map_mut);
-			break;
-		}
 		pthread_mutex_unlock(&map_mut);
 		usleep(TIME);
 	}
@@ -92,33 +90,31 @@ void *logs_move( void *t ){
 }
 
 void *keyboard_ctr(void *t){
+
 	while (true){
-		if (STATE) break;
+		// printf("2\n");
 		if (kbhit()){
 			pthread_mutex_lock(&map_mut);
 			char key = getchar();
-			if (key == 'Q' || key == 'q'){
-				STATE = 2;
-			}
-			else{
-				STATE = game->frog_move(key);
-			}
-			if (STATE) {
-				pthread_cond_signal(&end_game);
-				pthread_mutex_unlock(&map_mut);
-				break;
-			}
+			game->frog->move(key);
 			pthread_mutex_unlock(&map_mut);
 		}
+		else
+		{
+			game->frog->move(' ');
+			continue;
+		}
+		// printf("3\n");
 	}
-	printf("3\n");
 	pthread_exit(NULL);
 }
 
 int main( int argc, char *argv[] ){
 	pthread_t thread_logs;
 	pthread_t thread_keyboard;
+	pthread_attr_t attr;
 	pthread_mutex_init(&map_mut, NULL);
+	// pthread_mutex_init(&key_board_mut, NULL);
 	pthread_cond_init(&end_game, NULL);
 	// Initialize the river map and frog's starting position
 	if (true){
@@ -139,36 +135,22 @@ int main( int argc, char *argv[] ){
 		// map[ROW][(COLUMN-1) / 2] = '0' ; 
 	}
 
+	
+
+	
 	//Print the map into screen
 	game->initlize_game();
+	// pthread_attr_init(&attr);
 
-    // pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	/*  Create pthreads for wood move and frog control.  */
 	pthread_create(&thread_keyboard, NULL, keyboard_ctr, NULL);
 	pthread_create(&thread_logs, NULL, logs_move, NULL);
-
+	
 	/*  Display the output for user: win, lose or quit.  */
 	pthread_cond_wait(&end_game, &map_mut);
-	sleep(2);
-	printf("\033[H\033[2J");
-	switch (STATE) //0 alive //1 died //2 quit //3 win
-	{
-	case 1:
-		printf("You lose the game!!\n");
-		break;
-	case 2:
-		printf("You exit the game.\n");
-		break;
-	case 3:
-		printf("You win the game!!\n");
-		break;
-	default:
-		break;
-	}
-	// pthread_attr_destroy(&attr);
+	pthread_attr_destroy(&attr);
     pthread_mutex_destroy(&map_mut);
     pthread_cond_destroy(&end_game);
-	// pthread_exit(NULL);
 	return 0;
 
 }

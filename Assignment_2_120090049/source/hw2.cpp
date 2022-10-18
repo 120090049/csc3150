@@ -16,7 +16,7 @@ using namespace std;
 
 #define ROW 10
 #define COLUMN 50 
-#define TIME 90000
+#define TIME 80000
 
 pthread_mutex_t map_mut;
 pthread_mutex_t key_board_mut;
@@ -80,6 +80,7 @@ void *logs_move( void *t ){
 		pthread_mutex_unlock(&map_mut);
 		usleep(TIME);
 	}
+	printf("2\n");
 	pthread_exit(NULL);
 	/*  Check keyboard hits, to change frog's position or quit the game. */
 
@@ -149,7 +150,7 @@ int main( int argc, char *argv[] ){
 
 	/*  Display the output for user: win, lose or quit.  */
 	pthread_cond_wait(&end_game, &map_mut);
-	sleep(2);
+	sleep(1);
 	printf("\033[H\033[2J");
 	switch (STATE) //0 alive //1 died //2 quit //3 win
 	{

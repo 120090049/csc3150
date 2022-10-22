@@ -5,16 +5,16 @@
 
 
 typedef struct my_item {
-  /* TODO: More stuff here, maybe? */
+  void (*func) (int);
+  int args;
   struct my_item *next;
-  struct my_item *prev;
-} my_item_t;
+} work_t;
 
 typedef struct my_queue {
-  int size;
-  my_item_t *head;
-  /* TODO: More stuff here, maybe? */
-} my_queue_t;
+  work_t *head;
+  pthread_cond_t task_arrive;    
+  pthread_mutex_t queue_lock;  
+} thread_pool_t;
 
 void async_init(int);
 void async_run(void (*fx)(int), int args);

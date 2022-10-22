@@ -48,10 +48,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/vagrant/csc3150/Assignment_2_120090049
+CMAKE_SOURCE_DIR = /home/vagrant/csc3150/Assignment_2_120090049/source
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/vagrant/csc3150/Assignment_2_120090049/build
+CMAKE_BINARY_DIR = /home/vagrant/csc3150/Assignment_2_120090049/source
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/vagrant/csc3150/Assignment_2_120090049/build/CMakeFiles /home/vagrant/csc3150/Assignment_2_120090049/build/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/vagrant/csc3150/Assignment_2_120090049/source/CMakeFiles /home/vagrant/csc3150/Assignment_2_120090049/source/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/vagrant/csc3150/Assignment_2_120090049/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/vagrant/csc3150/Assignment_2_120090049/source/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -123,32 +123,32 @@ CSC3150_Assignment_2/fast:
 	$(MAKE) -f CMakeFiles/CSC3150_Assignment_2.dir/build.make CMakeFiles/CSC3150_Assignment_2.dir/build
 .PHONY : CSC3150_Assignment_2/fast
 
-source/hw2.o: source/hw2.cpp.o
+hw2.o: hw2.cpp.o
 
-.PHONY : source/hw2.o
+.PHONY : hw2.o
 
 # target to build an object file
-source/hw2.cpp.o:
-	$(MAKE) -f CMakeFiles/CSC3150_Assignment_2.dir/build.make CMakeFiles/CSC3150_Assignment_2.dir/source/hw2.cpp.o
-.PHONY : source/hw2.cpp.o
+hw2.cpp.o:
+	$(MAKE) -f CMakeFiles/CSC3150_Assignment_2.dir/build.make CMakeFiles/CSC3150_Assignment_2.dir/hw2.cpp.o
+.PHONY : hw2.cpp.o
 
-source/hw2.i: source/hw2.cpp.i
+hw2.i: hw2.cpp.i
 
-.PHONY : source/hw2.i
+.PHONY : hw2.i
 
 # target to preprocess a source file
-source/hw2.cpp.i:
-	$(MAKE) -f CMakeFiles/CSC3150_Assignment_2.dir/build.make CMakeFiles/CSC3150_Assignment_2.dir/source/hw2.cpp.i
-.PHONY : source/hw2.cpp.i
+hw2.cpp.i:
+	$(MAKE) -f CMakeFiles/CSC3150_Assignment_2.dir/build.make CMakeFiles/CSC3150_Assignment_2.dir/hw2.cpp.i
+.PHONY : hw2.cpp.i
 
-source/hw2.s: source/hw2.cpp.s
+hw2.s: hw2.cpp.s
 
-.PHONY : source/hw2.s
+.PHONY : hw2.s
 
 # target to generate assembly for a file
-source/hw2.cpp.s:
-	$(MAKE) -f CMakeFiles/CSC3150_Assignment_2.dir/build.make CMakeFiles/CSC3150_Assignment_2.dir/source/hw2.cpp.s
-.PHONY : source/hw2.cpp.s
+hw2.cpp.s:
+	$(MAKE) -f CMakeFiles/CSC3150_Assignment_2.dir/build.make CMakeFiles/CSC3150_Assignment_2.dir/hw2.cpp.s
+.PHONY : hw2.cpp.s
 
 # Help Target
 help:
@@ -159,9 +159,9 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... CSC3150_Assignment_2"
-	@echo "... source/hw2.o"
-	@echo "... source/hw2.i"
-	@echo "... source/hw2.s"
+	@echo "... hw2.o"
+	@echo "... hw2.i"
+	@echo "... hw2.s"
 .PHONY : help
 
 

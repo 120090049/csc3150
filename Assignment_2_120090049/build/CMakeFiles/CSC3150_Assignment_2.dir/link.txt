@@ -1,1 +1,0 @@
-/usr/bin/c++      CMakeFiles/CSC3150_Assignment_2.dir/source/hw2.cpp.o  -o CSC3150_Assignment_2 -lpthread 

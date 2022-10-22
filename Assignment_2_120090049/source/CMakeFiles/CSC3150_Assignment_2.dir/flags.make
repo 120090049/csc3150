@@ -6,5 +6,5 @@ CXX_FLAGS =
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I"/home/vagrant/csc3150/Assignment_2_120090049/'source'" 
+CXX_INCLUDES = -I"/home/vagrant/csc3150/Assignment_2_120090049/source/'.'" 
 

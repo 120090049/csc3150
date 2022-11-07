@@ -32,9 +32,8 @@ __device__ __managed__ uchar input[STORAGE_SIZE];
 // memory allocation for virtual_memory
 // secondary memory
 __device__ __managed__ uchar swap_space[STORAGE_SIZE]; // 128K
-// page table
+// page table 1KB
 extern __shared__ u32 pt[];
-// swap table
 
 __device__ void user_program(VirtualMemory *vm, uchar *input, uchar *results,
                              int input_size);
@@ -43,7 +42,8 @@ __global__ void mykernel(int input_size)
 {
   // memory allocation for virtual_memory
   // take shared memory as physical memory
-  __shared__ u16 st[4096];
+  // swap table
+  __shared__ u16 st[4096];                          // 2KB
   __shared__ uchar physical_mem[PHYSICAL_MEM_SIZE]; // 32K
 
   VirtualMemory vm;

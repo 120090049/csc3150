@@ -16,7 +16,7 @@ using namespace std;
 
 #define ROW 10
 #define COLUMN 50 
-#define TIME 80000
+#define TIME 80000 
 
 pthread_mutex_t map_mut;
 pthread_mutex_t key_board_mut;

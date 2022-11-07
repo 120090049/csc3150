@@ -1,4 +1,4 @@
-#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
 
 #IncludeRegexScan: ^.*$
 
@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/vagrant/csc3150/Assignment_2_120090049/source/game.h
+/home/clp/school_textbook/CSC3150/csc3150/Assignment_2_120090049/source/game.h
 stdio.h
 -
 stdlib.h
@@ -28,7 +28,7 @@ fcntl.h
 iostream
 -
 
-/home/vagrant/csc3150/Assignment_2_120090049/source/hw2.cpp
+/home/clp/school_textbook/CSC3150/csc3150/Assignment_2_120090049/source/hw2.cpp
 stdio.h
 -
 stdlib.h
@@ -48,7 +48,7 @@ termios.h
 fcntl.h
 -
 game.h
-/home/vagrant/csc3150/Assignment_2_120090049/source/game.h
+/home/clp/school_textbook/CSC3150/csc3150/Assignment_2_120090049/source/game.h
 iostream
 -
 

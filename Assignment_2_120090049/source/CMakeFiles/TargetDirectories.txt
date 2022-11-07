@@ -1,3 +1,3 @@
-/home/vagrant/csc3150/Assignment_2_120090049/source/CMakeFiles/rebuild_cache.dir
-/home/vagrant/csc3150/Assignment_2_120090049/source/CMakeFiles/edit_cache.dir
-/home/vagrant/csc3150/Assignment_2_120090049/source/CMakeFiles/CSC3150_Assignment_2.dir
+/home/clp/school_textbook/CSC3150/csc3150/Assignment_2_120090049/source/CMakeFiles/rebuild_cache.dir
+/home/clp/school_textbook/CSC3150/csc3150/Assignment_2_120090049/source/CMakeFiles/edit_cache.dir
+/home/clp/school_textbook/CSC3150/csc3150/Assignment_2_120090049/source/CMakeFiles/CSC3150_Assignment_2.dir

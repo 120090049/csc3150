@@ -1,5 +1,5 @@
-#ifndef VIRTUAL_MEMORY_H
-#define VIRTUAL_MEMORY_H
+#ifndef FILE_SYSTEM_H
+#define FILE_SYSTEM_H
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -16,11 +16,11 @@ typedef uint32_t u32;
 
 struct FileSystem {
 	uchar *volume;
-	int SUPERBLOCK_SIZE;
+	int VCB;
 	int FCB_SIZE;
 	int FCB_ENTRIES;
 	int STORAGE_SIZE;
-	int STORAGE_BLOCK_SIZE;
+	int BLOCK_SIZE;
 	int MAX_FILENAME_SIZE;
 	int MAX_FILE_NUM;
 	int MAX_FILE_SIZE;
@@ -28,9 +28,9 @@ struct FileSystem {
 };
 
 
-__device__ void fs_init(FileSystem *fs, uchar *volume, int SUPERBLOCK_SIZE,
+__device__ void fs_init(FileSystem *fs, uchar *volume, int VCB,
 	int FCB_SIZE, int FCB_ENTRIES, int VOLUME_SIZE,
-	int STORAGE_BLOCK_SIZE, int MAX_FILENAME_SIZE,
+	int BLOCK_SIZE, int MAX_FILENAME_SIZE,
 	int MAX_FILE_NUM, int MAX_FILE_SIZE, int FILE_BASE_ADDRESS);
 
 __device__ u32 fs_open(FileSystem *fs, char *s, int op);
@@ -38,6 +38,10 @@ __device__ void fs_read(FileSystem *fs, uchar *output, u32 size, u32 fp);
 __device__ u32 fs_write(FileSystem *fs, uchar* input, u32 size, u32 fp);
 __device__ void fs_gsys(FileSystem *fs, int op);
 __device__ void fs_gsys(FileSystem *fs, int op, char *s);
+
+///////////////////
+__device__ int fcb_find(FileSystem *fs, char *file_name);
+__device__ bool cmp_str(char * s1, char * s2);
 
 
 #endif

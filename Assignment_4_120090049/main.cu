@@ -9,11 +9,11 @@
 #define DATAFILE "./data.bin"
 #define OUTFILE "./snapshot.bin"
 
-#define SUPERBLOCK_SIZE 4096 //32K/8 bits = 4 K
+#define VCB 4096 //32K/8 bits = 4 K
 #define FCB_SIZE 32 //32 bytes per FCB
 #define FCB_ENTRIES 1024
 #define VOLUME_SIZE 1085440 //4096+32768+1048576
-#define STORAGE_BLOCK_SIZE 32
+#define BLOCK_SIZE 32
 
 #define MAX_FILENAME_SIZE 20
 #define MAX_FILE_NUM 1024
@@ -37,8 +37,8 @@ __global__ void mykernel(uchar *input, uchar *output) {
 
   // Initilize the file system	
   FileSystem fs;
-  fs_init(&fs, volume, SUPERBLOCK_SIZE, FCB_SIZE, FCB_ENTRIES, 
-			VOLUME_SIZE,STORAGE_BLOCK_SIZE, MAX_FILENAME_SIZE, 
+  fs_init(&fs, volume, VCB, FCB_SIZE, FCB_ENTRIES, 
+			VOLUME_SIZE,BLOCK_SIZE, MAX_FILENAME_SIZE, 
 			MAX_FILE_NUM, MAX_FILE_SIZE, FILE_BASE_ADDRESS);
 
   // user program the access pattern for testing file operations

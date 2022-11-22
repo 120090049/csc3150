@@ -40,7 +40,7 @@ __device__ void user_program(FileSystem *fs, uchar *input, uchar *output) {
 	fs_write(fs,input + 64, 12, fp);
 	fs_gsys(fs,LS_S);
 	fs_gsys(fs,LS_D);
-	fs_gsys(fs,RM, "t.txt\0");
+	fs_gsys(fs,RM, "t.txt\0"); // 12
 	fs_gsys(fs,LS_S);
 	char fname[10][20];
 	for (int i = 0; i < 10; i++)
@@ -54,7 +54,7 @@ __device__ void user_program(FileSystem *fs, uchar *input, uchar *output) {
 	for (int i = 0; i < 10; i++)
 	{
 		fp = fs_open(fs,fname[i], G_WRITE);
-		fs_write(fs,input + i, 24 + i, fp);
+		fs_write(fs,input + i, 24 + i, fp); // 24 - 33
 	}
 
 	fs_gsys(fs,LS_S);

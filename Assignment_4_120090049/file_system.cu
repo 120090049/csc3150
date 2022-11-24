@@ -6,7 +6,7 @@
 
 __device__ __managed__ u32 gtime = 0;
 
-__device__ void fs_init(FileSystem *fs, uchar *volume, int VCB,
+__device__ void fs_init(FileSystem *fs, uchar *volume, int SUPERBLOCK_SIZE,
                         int FCB_SIZE, int FCB_ENTRIES, int VOLUME_SIZE,
                         int BLOCK_SIZE, int MAX_FILENAME_SIZE,
                         int MAX_FILE_NUM, int MAX_FILE_SIZE, int FILE_BASE_ADDRESS)
@@ -15,34 +15,33 @@ __device__ void fs_init(FileSystem *fs, uchar *volume, int VCB,
   fs->volume = volume;
 
   // init constants
-  fs->VCB = VCB;
+  fs->SUPERBLOCK_SIZE = SUPERBLOCK_SIZE;
   fs->FCB_SIZE = FCB_SIZE;
   fs->FCB_ENTRIES = FCB_ENTRIES;
-  fs->STORAGE_SIZE = VOLUME_SIZE;
+  fs->VOLUME_SIZE = VOLUME_SIZE;
   fs->BLOCK_SIZE = BLOCK_SIZE;
   fs->MAX_FILENAME_SIZE = MAX_FILENAME_SIZE;
   fs->MAX_FILE_NUM = MAX_FILE_NUM;
   fs->MAX_FILE_SIZE = MAX_FILE_SIZE;
   fs->FILE_BASE_ADDRESS = FILE_BASE_ADDRESS;
 
-  // init VCB
-  for (int i = 0; i < fs->VCB; i++)
+  // init SUPERBLOCK_SIZE
+  for (int i = 0; i < fs->SUPERBLOCK_SIZE; i++)
   {
     fs->volume[i] = 0;
   }
   // init FCB
   //   FCB:
   //   0-19   name
-  //	 20     nothing
-  //   21     (all in the 21 byte least significent 3 bit) valid bit + directory or not + empty or not
-  //          initial state = 0000 0001
+  //	 20     LSB valid bit
+  //   21     LSB directory
   //	 22-23  start address
-  //	 24-27  size (valid bit at 22)
+  //	 24-27  size
   //	 28-29  created time
   //   30-31  modified time
   for (int i = 0; i < fs->FCB_ENTRIES; i++)
   {
-    fs->volume[fs->VCB + fs->FCB_SIZE * i + 21] = 0x1; // set to initial state = 001 (not valid + not directory + is empty)
+    fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * i + 21] = 0x1; // set to initial state = 001 (not valid + not directory + is empty)
   }
 }
 
@@ -50,7 +49,7 @@ __device__ int fcb_find(FileSystem *fs, char *file_name)
 {
   for (int i = 0; i < fs->FCB_ENTRIES; i++)
   {
-    fs->volume[fs->VCB + fs->FCB_SIZE * i + 21] = 0x1;
+    fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * i + 21] = 0x1;
   }
 }
 

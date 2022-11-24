@@ -20,6 +20,8 @@ void printf_bin(int num)
 }
 
 int main(){
-    int a = 258;	
-    printf_bin(a);
+    int a[10];
+	a[0] = 1;
+	a = "\0";
+    printf("%d\n", a[0]);
 }

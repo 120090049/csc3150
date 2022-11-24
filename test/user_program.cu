@@ -7,52 +7,69 @@
 __device__ void user_program(FileSystem *fs, uchar *input, uchar *output) {
 
 
-	char name[20] = "clp\0";
-	
-	u32 fp = fs_open(fs, "t.txt\0", G_WRITE);
-	printf_bin(fp);
-	printf_fcb(fs, 0);
+// 	char name[20] = "clp\0";
+// 	u32 fp = fs_open(fs, "t.txt\0", G_WRITE);
+// 	printf_bin(fp);
+// 	fs_write(fs, input, 64, fp);
+// 	printf_fcb(fs, 0);
+// printf("--------------------\n");
+// 	fp = fs_open(fs, "b.txt\0", G_WRITE);
+// 	printf_bin(fp);
+// 	fs_write(fs, input, 64, fp);
+// 	printf_fcb(fs, 1);
+
+// printf("--------------------\n");
+// 	fp = fs_open(fs, "t.txt\0", G_WRITE);
+// 	printf_bin(fp);
+// 	fs_write(fs, input, 64, fp);
+// 	printf_fcb(fs, 0);
+
+// 	printf("%d\n", vcb_get(fs, 0));
+// 	printf("%d\n", vcb_get(fs, 1));
+// 	printf("%d\n", vcb_get(fs, 2));
+// 	printf("%d\n", vcb_get(fs, 3));
+// 	printf("%d\n", vcb_get(fs, 4));
+// 	printf("%d\n", vcb_get(fs, 5));
+// 	printf("%d\n", vcb_get(fs, 6));
+// 	printf("%d\n", vcb_get(fs, 7));
+// 	printf("%d\n", vcb_get(fs, 8));
+// 	uchar a[64];
+// 	uchar b[32];
+// 	u32 fp = fs_open(fs, "t.txt\0", G_WRITE);  // t 0-64  0 1   0 0
+// 	fs_write(fs, input, 64, fp);
+// 	printf_fcb(fs, 0);
+// 	printf_VCB(fs, 0, 10);
+// printf("--------------------\n");
+
+// 	fp = fs_open(fs, "b.txt\0", G_WRITE);   	// b 32-64  2   1 1
+// 	fs_write(fs, input + 32, 32, fp);
+// 	printf_fcb(fs, 1);
+// 	printf_VCB(fs, 0, 10);
+// printf("--------------------\n");
+
+// 	fp = fs_open(fs, "t.txt\0", G_WRITE);    // t 32-64     0   0 2
+// 	fs_write(fs, input + 32, 32, fp);
+// 	printf_fcb(fs, 0);
+// 	printf_VCB(fs, 0, 10);
+// printf("--------------------\n");
+
+// 	fp = fs_open(fs, "t.txt\0", G_READ);   // t read 32-64  0   0 2
+// 	fs_read(fs, a, 32, fp);
+// 	printf_fcb(fs, 0);
+// 	printf_VCB(fs, 0, 10);
+// 	// printf("read result:\n %s\n", a);
+// printf("--------------------\n");
+// 	// fs_gsys(fs,LS_D);
+// 	// fs_gsys(fs, LS_S);
+
+// 	fp = fs_open(fs, "b.txt\0", G_WRITE);  // b      64-76  1   1 3
+// 	fs_write(fs, input + 64, 12, fp);
+// 	printf_fcb(fs, 1);
+// 	printf_VCB(fs, 0, 10);
+// printf("--------------------\n");
 
 
-// FCB
-	// printf("--------------------\n");
-	// fcb_set_name(fs, 10, name);
-	// fcb_set_validbit(fs, 10);
-	// fcb_clear_validbit(fs, 10);
-	// fcb_set_dir(fs, 10);
-	// fcb_set_start(fs, 10, 1024);
-	
-	// fcb_set_size(fs,10, 123456789);
-	// u32 gtime = 5;
-	// fcb_set_createtime(fs, 10, gtime);
-	// gtime ++;
-	// fcb_set_modifytime(fs,10, gtime);
 
-	// fcb_clear(fs, 10);
-	// printf_fcb(fs, 10);
-	
-	
-
-// VCB
-	// int* super_block_ptr = (int*) &fs->volume[0]; // every 4 is a VCB
-	// printf_bin(*super_block_ptr);
-	// vcb_set(fs, 0);
-	// printf_bin(*super_block_ptr);
-	// vcb_set(fs, 0);
-	// vcb_set(fs, 0);
-	// printf_bin(*super_block_ptr);
-	// vcb_clear(fs, 0);
-	// printf_bin(*super_block_ptr);
-	// printf("%d\n", vcb_get(fs, 0));
-	// printf("%d\n", vcb_get(fs, 0));
-	// vcb_clear(fs, 0);
-	// printf_bin(*super_block_ptr);
-
-	// printf("%d\n", vcb_get(fs, 0));
-	// printf("%d\n", vcb_get(fs, 0));
-	// vcb_set(fs, 0);
-	// printf("%d\n", vcb_get(fs, 0));
-	// printf("Done\n");
 	return;
 
 }

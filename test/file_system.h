@@ -48,8 +48,16 @@ __device__ void fs_gsys(FileSystem *fs, int op, char *s);
 ///////////////////
 
 // utils
+__device__ void compact(FileSystem *fs);
+
+__device__ int allocate(FileSystem *fs, int num);
+__device__ void clear_VCB_fileblocks (FileSystem *fs, int start, int size);
+
+//file blocks
+__device__ void fb_clear (FileSystem *fs, int index);
 
 // VCB
+__device__ void printf_VCB(FileSystem *fs, int start, int end);
 __device__ void printf_bin(int num);
 __device__ void vcb_set(FileSystem *fs, int block_index) ;
 __device__ void vcb_clear(FileSystem *fs, int block_index) ;

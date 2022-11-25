@@ -34,39 +34,44 @@ __device__ void fs_init(FileSystem *fs, uchar *volume, int SUPERBLOCK_SIZE,
   // init FCBs
   for (int i = fs->SUPERBLOCK_SIZE; i < fs->SUPERBLOCK_SIZE + fs->FCB_ENTRIES * fs->FCB_SIZE; i++)
   {
-    fs->volume[i] = 0; 
+    fs->volume[i] = 0;
   }
 }
 
-
-  // init FCB
-  //   FCB:
-  //   0-19   name
-  //	 20     LSB valid bit
-  //   21     LSB directory
-  //	 22-23  start address
-  //	 24-27  size
-  //	 28-29  created time
-  //   30-31  modified time
+// init FCB
+//   FCB:
+//   0-19   name
+//	 20     LSB valid bit
+//   21     LSB directory
+//	 22-23  start address
+//	 24-27  size
+//	 28-29  created time
+//   30-31  modified time
 
 __device__ u32 fs_open(FileSystem *fs, char *file_name, int op)
 {
   int target_fcb_index = -1;
 
-  for (int i=0; i<fs->FCB_ENTRIES; i++) {
-    if ( (fcb_get_validbit(fs, i) ) && ( cmp_str(fcb_get_name(fs, i), file_name)) ) {
+  for (int i = 0; i < fs->FCB_ENTRIES; i++)
+  {
+    if ((fcb_get_validbit(fs, i)) && (cmp_str(fcb_get_name(fs, i), file_name)))
+    {
       target_fcb_index = i;
       break;
     }
   }
-  if (target_fcb_index == -1) { // not find the target
-    for (int i=0; i<fs->FCB_ENTRIES; i++) {
-      if ( !fcb_get_validbit(fs, i) ) { // find the fcb that is invalid
+  if (target_fcb_index == -1)
+  { // not find the target
+    for (int i = 0; i < fs->FCB_ENTRIES; i++)
+    {
+      if (!fcb_get_validbit(fs, i))
+      { // find the fcb that is invalid
         target_fcb_index = i;
         break;
       }
     }
-    if (target_fcb_index == -1){
+    if (target_fcb_index == -1)
+    {
       printf("The FCB blocks are already full!\n");
       return 0;
     }
@@ -77,18 +82,20 @@ __device__ u32 fs_open(FileSystem *fs, char *file_name, int op)
     fcb_set_start(fs, target_fcb_index, start);
     fcb_set_size(fs, target_fcb_index, 0);
     fcb_set_createtime(fs, target_fcb_index, gtime_c);
-    gtime_c ++;
+    gtime_c++;
   }
   // after all of these, we have already get or allocate the FCB
   // The handler consists of three part, read/write bit + FCB index + start block
   u32 handler = 0;
-  if (op == G_READ){
-    handler |= (1<<31);
+  if (op == G_READ)
+  {
+    handler |= (1 << 31);
   }
-  if (op == G_WRITE) {
-    handler |= (1<<30);
+  if (op == G_WRITE)
+  {
+    handler |= (1 << 30);
   }
-  handler |= (target_fcb_index << 16); // FCB index
+  handler |= (target_fcb_index << 16);                 // FCB index
   handler |= (u16)fcb_get_start(fs, target_fcb_index); // start block index
   return handler;
 }
@@ -96,32 +103,38 @@ __device__ u32 fs_open(FileSystem *fs, char *file_name, int op)
 __device__ void fs_read(FileSystem *fs, uchar *output, u32 size, u32 fp)
 {
   bool out = fp & (1 << 31); // check the valid bit
-  if (out) {
-    int start_index = fp & 0xffff; // retrieve the start file block
+  if (out)
+  {
+    int start_index = fp & 0xffff;          // retrieve the start file block
     int FCB_index = (fp & 0xfff0000) >> 16; // retrieve the FCB block index
 
     int file_size = fcb_get_size(fs, FCB_index);
 
-    if (start_index == 0xffff || file_size == 0) {
+    if (start_index == 0xffff || file_size == 0)
+    {
       printf("The file block hasn't been allocate, cannot read, bro!\n");
       return;
     }
     int read_size;
-    if (size > file_size) {
+    if (size > file_size)
+    {
       read_size = file_size;
     }
-    else {
+    else
+    {
       read_size = size;
     }
     // start to read
     int start_addr = fs->FILE_BASE_ADDRESS + start_index * fs->BLOCK_SIZE;
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++)
+    {
       output[i] = fs->volume[start_addr + i];
       // printf("%d and %c", i, output[i]);
     }
     return;
   }
-  else {
+  else
+  {
     printf("Invalid operation, this is a read operation, bro!\n");
     return;
   }
@@ -130,27 +143,32 @@ __device__ void fs_read(FileSystem *fs, uchar *output, u32 size, u32 fp)
 __device__ u32 fs_write(FileSystem *fs, uchar *input, u32 size, u32 fp)
 {
   bool out = fp & (1 << 30); // check the valid bit
-  if (out) {
-    int start_index = fp & 0xffff; // retrieve the start file block
+  if (out)
+  {
+    int start_index = fp & 0xffff;          // retrieve the start file block
     int FCB_index = (fp & 0xfff0000) >> 16; // retrieve the FCB block index
     // printf("start_index: %d\n", start_index);
     // printf("FCB_index: %d\n", FCB_index);
 
     int need_block_num = (size - 1 + fs->BLOCK_SIZE) / fs->BLOCK_SIZE;
     int pre_size = fcb_get_size(fs, FCB_index);
-    int occupied_block_num = (pre_size -1 + fs->BLOCK_SIZE) / fs->BLOCK_SIZE;
-    
-    if (pre_size != 0 && start_index != 0xffff)  // not empty! clear VCB and file blocks!
-    { 
+    int occupied_block_num = (pre_size - 1 + fs->BLOCK_SIZE) / fs->BLOCK_SIZE;
+
+    if (pre_size != 0 && start_index != 0xffff) // not empty! clear VCB and file blocks!
+    {
       int start = fcb_get_start(fs, FCB_index);
       clear_VCB_fileblocks(fs, start, occupied_block_num);
     }
-    
+
     // start to allocate space
     int new_start_index = allocate(fs, need_block_num);
-    if (new_start_index == -1) {
+    // printf("%d = allocate(fs, %d)\n", new_start_index, need_block_num);
+    if (new_start_index == -1)
+    {
       // compact and allocate again
       compact(fs);
+      printf_VCB(fs, 0, 31);
+      printf_VCB(fs, 32, 63);
       new_start_index = allocate(fs, need_block_num);
       if (new_start_index == -1) // still cannot allocate, give out error!
       {
@@ -158,23 +176,26 @@ __device__ u32 fs_write(FileSystem *fs, uchar *input, u32 size, u32 fp)
         return 1;
       }
     }
-    else {
+    else
+    {
       // VCB has already been updated in the allocate fu
       // update FCB
       fcb_set_start(fs, FCB_index, new_start_index);
       fcb_set_size(fs, FCB_index, size);
       fcb_set_modifytime(fs, FCB_index, gtime_m);
-      gtime_m ++;
-      
+      gtime_m++;
+
       // write into the file blocks
       int new_addr = fs->FILE_BASE_ADDRESS + fs->BLOCK_SIZE * new_start_index;
-      for (int i = 0; i < size; i++) {
+      for (int i = 0; i < size; i++)
+      {
         fs->volume[new_addr + i] = input[i];
       }
     }
     return 0;
   }
-  else {
+  else
+  {
     printf("Invalid operation, this is a write operation, bro!\n");
     return 1;
   }
@@ -185,17 +206,20 @@ __device__ void fs_gsys(FileSystem *fs, int op)
   if (op == LS_D) // sorted by modified time
   {
     printf("===sorted by modified time===\n");
-    for (int time = gtime_m; time >=0; time--)
+    for (int time = gtime_m; time >= 0; time--)
     {
       int target_fcb_index = -1;
-      for (int i=0; i<fs->FCB_ENTRIES; i++) {
-        if ( (fcb_get_validbit(fs, i) ) && ( fcb_get_modifytime(fs, i) == time ) ) {
+      for (int i = 0; i < fs->FCB_ENTRIES; i++)
+      {
+        if ((fcb_get_validbit(fs, i)) && (fcb_get_modifytime(fs, i) == time))
+        {
           target_fcb_index = i;
           break;
         }
       }
-      if (target_fcb_index != -1) {
-        char* filename;
+      if (target_fcb_index != -1)
+      {
+        char *filename;
         filename = fcb_get_name(fs, target_fcb_index);
         printf("%s\n", filename);
       }
@@ -212,101 +236,177 @@ __device__ void fs_gsys(FileSystem *fs, int op)
       int target_size = -1;
 
       // iterate all valid FCBs to find the biggest file that < pre_tar_size
-      for (int i=0; i<fs->FCB_ENTRIES; i++) {
+      for (int i = 0; i < fs->FCB_ENTRIES; i++)
+      {
         int temp_size = fcb_get_size(fs, i);
-        if ( (fcb_get_validbit(fs, i) ) && ( temp_size < pre_tar_size ) ) {
-          if (temp_size > target_size) {
+        if ((fcb_get_validbit(fs, i)) && (temp_size < pre_tar_size))
+        {
+          if (temp_size > target_size)
+          {
             target_size = temp_size;
-            num =  1;
+            num = 1;
             list_for_equal_size[0] = i;
           }
-          else if (temp_size == target_size) {
-            num ++;
-            list_for_equal_size[num-1] = i;
+          else if (temp_size == target_size)
+          {
+            num++;
+            list_for_equal_size[num - 1] = i;
           }
-          else {
+          else
+          {
             continue;
           }
         }
       }
 
-      if (target_size == -1) {
-        return; //no more smaller file can be found
+      if (target_size == -1)
+      {
+        return; // no more smaller file can be found
       }
       pre_tar_size = target_size;
-      
+
       // now start to print the file (with the same size) based on creating time
       int list_for_creating_time[50];
-      for (int i=0; i<num; i++) {
+      for (int i = 0; i < num; i++)
+      {
         list_for_creating_time[i] = fcb_get_createtime(fs, list_for_equal_size[i]);
       }
-      for (int k=0; k<gtime_c; k++) {
-        for (int i=0; i<num; i++) {
-          if (list_for_creating_time[i] == k) {
+      for (int k = 0; k < gtime_c; k++)
+      {
+        for (int i = 0; i < num; i++)
+        {
+          if (list_for_creating_time[i] == k)
+          {
             int FCB_index = list_for_equal_size[i];
             printf("%s %d\n", fcb_get_name(fs, FCB_index), fcb_get_size(fs, FCB_index));
           }
         }
       }
-    } 
+    }
   }
   return;
-  
 }
 
 __device__ void fs_gsys(FileSystem *fs, int op, char *file_name)
 {
   /* Implement rm operation here */
-  if (op == RM) {
+  if (op == RM)
+  {
     int target_fcb_index = -1;
-    for (int i=0; i<fs->FCB_ENTRIES; i++) {
-      if ( (fcb_get_validbit(fs, i) ) && ( cmp_str(fcb_get_name(fs, i), file_name)) ) {
+    for (int i = 0; i < fs->FCB_ENTRIES; i++)
+    {
+      if ((fcb_get_validbit(fs, i)) && (cmp_str(fcb_get_name(fs, i), file_name)))
+      {
         target_fcb_index = i;
         break;
       }
     }
-    if (target_fcb_index == -1) {
-      printf ("The file you want to remove do not exists!\n");
+    if (target_fcb_index == -1)
+    {
+      printf("The file you want to remove do not exists!\n");
     }
-    else {
+    else
+    {
       int start = fcb_get_start(fs, target_fcb_index);
       int size = fcb_get_size(fs, target_fcb_index);
-      int occupied_block_num = (size + fs->BLOCK_SIZE -1) / fs->BLOCK_SIZE;
+      int occupied_block_num = (size + fs->BLOCK_SIZE - 1) / fs->BLOCK_SIZE;
       clear_VCB_fileblocks(fs, start, occupied_block_num);
       fcb_clear(fs, target_fcb_index);
     }
     return;
   }
-  else {
+  else
+  {
     printf("this is the RM operation, but your command is wrong, bro!\n");
     return;
   }
 }
 
-
-
-
-
-
 // utils
 
-__device__ void compact(FileSystem *fs) { 
+__device__ void compact(FileSystem *fs)
+{
+  int target_start = 0;
+  while (true)
+  {
+    /* code */
+    int start = fs->FCB_ENTRIES;
+    int index;
+    for (int i=0; i<fs->FCB_ENTRIES; i++)
+    {
+      int start_temp = fcb_get_start(fs, i);
+      int size_temp = fcb_get_size(fs, i);
+      if ( (start_temp != 0xffff) && (start_temp >= target_start) && (start_temp < start))
+      {
+        start = start_temp;
+        index = i;
+      }
+    }
+    if (start != fs->FCB_ENTRIES) { // doesn't find blocks needed to be compacted
+      return;
+    }
+    else {
+      int size = fcb_get_size(fs, index);
+      if (target_start != start) { // there is fragmentation between two consecutive blocks
+        
+        // start to compact!
+        // generate a handler to use fs_read
+        u32 handler = 0;
+        handler |= (1 << 31);
+        handler |= (index << 16);                 // FCB index
+        handler |= (u16)fcb_get_start(fs, start); // start block index
+        uchar buffer[1024];
+        fs_read(fs, buffer, size, handler);
+
+        // clear VCB and file blocks
+        int occupied_blocks = (size + fs->BLOCK_SIZE -1) / fs->BLOCK_SIZE;
+        clear_VCB_fileblocks(fs, start, occupied_blocks);
+        // set new VCB
+        for (int k=target_start; k<target_start+occupied_blocks; k++) {
+          vcb_set(fs, k);
+        }
+        // update FCB
+        fcb_set_start(fs, index, target_start);
+
+        // copy the file blocks
+        int start_addr = fs->FILE_BASE_ADDRESS + target_start * fs->BLOCK_SIZE;
+        for (int i = 0; i < size; i++)
+        {
+          fs->volume[start_addr + i] = buffer[i];
+        }
+
+        target_start += size;
+      }
+      else {
+        target_start += size;
+        continue;
+      }
+
+    }
+  }
+  
   return;
 }
 
-__device__ int allocate(FileSystem *fs, int num) {
+__device__ int allocate(FileSystem *fs, int num)
+{
   int continuous_empty_VCB = 0;
-  for (int i = 0; i < fs->SUPERBLOCK_SIZE; i++) {
-    if (!vcb_get(fs, i)) {
-      continuous_empty_VCB ++;
+  for (int i = 0; i < fs->SUPERBLOCK_SIZE * 8; i++)
+  {
+    if (!vcb_get(fs, i))
+    { // empty
+      continuous_empty_VCB++;
     }
-    else {
+    else
+    {
       continuous_empty_VCB = 0;
       continue;
     }
-    if (continuous_empty_VCB == num) {
-      int start_index = i-num+1;
-      for (int t=start_index; t<start_index + num; t++){
+    if (continuous_empty_VCB == num)
+    {
+      int start_index = i - num + 1;
+      for (int t = start_index; t < start_index + num; t++)
+      {
         vcb_set(fs, t);
       }
       return start_index;
@@ -315,8 +415,9 @@ __device__ int allocate(FileSystem *fs, int num) {
   return -1;
 }
 
-__device__ void clear_VCB_fileblocks (FileSystem *fs, int start, int size) {
-  for (int i = start; i < start+size; i++)
+__device__ void clear_VCB_fileblocks(FileSystem *fs, int start, int size)
+{
+  for (int i = start; i < start + size; i++)
   {
     vcb_clear(fs, i);
     fb_clear(fs, i);
@@ -324,21 +425,22 @@ __device__ void clear_VCB_fileblocks (FileSystem *fs, int start, int size) {
   return;
 }
 
-//file blocks
-__device__ void fb_clear (FileSystem *fs, int index) {
+// file blocks
+__device__ void fb_clear(FileSystem *fs, int index)
+{
   int start_index = fs->FILE_BASE_ADDRESS + index * fs->BLOCK_SIZE;
-  for (int i=start_index; i<start_index+fs->BLOCK_SIZE; i++)
+  for (int i = start_index; i < start_index + fs->BLOCK_SIZE; i++)
   {
-    fs->volume[i] = 0; 
+    fs->volume[i] = 0;
   }
   return;
 }
 
-
-
 // VCB
-__device__ void printf_VCB(FileSystem *fs, int start, int end){
-  for (int i=start; i<end+1; i++) {
+__device__ void printf_VCB(FileSystem *fs, int start, int end)
+{
+  for (int i = start; i < end + 1; i++)
+  {
     printf("%d", vcb_get(fs, i));
   }
   printf("\n");
@@ -347,77 +449,85 @@ __device__ void printf_VCB(FileSystem *fs, int start, int end){
 
 __device__ void printf_bin(int num)
 {
-	int i, j, k;
-	unsigned char *p = (unsigned char*)&num + 3;
+  int i, j, k;
+  unsigned char *p = (unsigned char *)&num + 3;
 
-	for (i = 0; i < 4; i++) 
-	{
-		j = *(p - i); 
-		for (int k = 7; k >= 0; k--) 
-		{
-			if (j & (1 << k))
-				printf("1");
-			else
-				printf("0");
-		}
-		printf(" ");
-	}
-	printf("\r\n");
+  for (i = 0; i < 4; i++)
+  {
+    j = *(p - i);
+    for (int k = 7; k >= 0; k--)
+    {
+      if (j & (1 << k))
+        printf("1");
+      else
+        printf("0");
+    }
+    printf(" ");
+  }
+  printf("\r\n");
   return;
 }
 
-__device__ void vcb_set(FileSystem *fs, int block_index) {
-	if (block_index < 0 || block_index >= (fs->SUPERBLOCK_SIZE)) {
+__device__ void vcb_set(FileSystem *fs, int block_index)
+{
+  if (block_index < 0 || block_index >= (fs->SUPERBLOCK_SIZE * 8))
+  {
     printf("superblock setting overflow\n");
-		return;
-	}
-	int row = block_index / 8;
-	int column = block_index % 8;
-	uchar mask;
-	mask = (1 << column);
-	fs->volume[row] |= mask;
-	return;
-}
-
-__device__ void vcb_clear(FileSystem *fs, int block_index) {
-  if (block_index < 0 || block_index >= (fs->SUPERBLOCK_SIZE)) {
-    printf("superblock setting overflow\n");
-		return;
-	}
-	int row = block_index / 8;
-	int column = block_index % 8;
-	uchar mask;
-	mask = (1 << column);
-	mask = ~mask;
-	fs->volume[row] &= mask;
+    return;
+  }
+  int row = block_index / 8;
+  int column = block_index % 8;
+  uchar mask;
+  mask = (1 << column);
+  fs->volume[row] |= mask;
   return;
 }
 
-__device__ bool vcb_get(FileSystem *fs, int block_index) {
-  if (block_index < 0 || block_index >= (fs->SUPERBLOCK_SIZE)) {
-    printf("superblock setting overflow\n");
-		return;
-	}
-	int row = block_index / 8;
-	int column = block_index % 8;
-	uchar mask;
-	mask = (1 << column);
+__device__ void vcb_clear(FileSystem *fs, int block_index)
+{
+  if (block_index < 0 || block_index >= (fs->SUPERBLOCK_SIZE * 8))
+  {
+    printf("superblock clearing overflow\n");
+    return;
+  }
+  int row = block_index / 8;
+  int column = block_index % 8;
+  uchar mask;
+  mask = (1 << column);
+  mask = ~mask;
+  fs->volume[row] &= mask;
+  return;
+}
+
+__device__ bool vcb_get(FileSystem *fs, int block_index)
+{
+  if (block_index < 0 || block_index >= (fs->SUPERBLOCK_SIZE * 8))
+  {
+    printf("superblock getting overflow\n");
+    return;
+  }
+  int row = block_index / 8;
+  int column = block_index % 8;
+  uchar mask;
+  mask = (1 << column);
   bool out = fs->volume[row] & mask; // out=1 occupied
-	return out;
+  return out;
 }
-
 
 // FCB
-__device__ void printf_fcb(FileSystem *fs, int index) {
-	char* getname = fcb_get_name(fs, index);
-	printf("name: %s\n", getname);
-	printf("valid: %d\n", fcb_get_validbit(fs, index));
-	printf("dir: %d\n", fcb_check_dir(fs, index));
-	printf("start: %d\n", fcb_get_start(fs, index));
-	printf("size: %d\n", fcb_get_size(fs, index));
-	printf("create: %d\n", fcb_get_createtime(fs,index));
-	printf("modify: %d\n", fcb_get_modifytime(fs, index));
-	return;
+__device__ void printf_fcb(FileSystem *fs, int index)
+{
+  char *getname = fcb_get_name(fs, index);
+  printf("=== the %d fcb ===\n", index);
+  printf("name: %s\n", getname);
+  printf("valid: %d\n", fcb_get_validbit(fs, index));
+  printf("dir: %d\n", fcb_check_dir(fs, index));
+  printf("start: %d\n", fcb_get_start(fs, index));
+  printf("size: %d\n", fcb_get_size(fs, index));
+  printf("create: %d\n", fcb_get_createtime(fs, index));
+  printf("modify: %d\n", fcb_get_modifytime(fs, index));
+  printf("---------------\n");
+  return;
 }
 
 __device__ bool cmp_str(char *str1, char *str2)
@@ -437,117 +547,134 @@ __device__ bool cmp_str(char *str1, char *str2)
   }
 }
 
-__device__ void fcb_clear(FileSystem *fs, int index) {
+__device__ void fcb_clear(FileSystem *fs, int index)
+{
   int start = fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index;
-  for (int i = start; i < start + 32 ; i++)
+  for (int i = start; i < start + 32; i++)
   {
-    fs->volume[i] = 0; 
+    fs->volume[i] = 0;
   }
 }
 
-
-__device__ char * fcb_get_name(FileSystem *fs, int index) {
-  uchar * ptr = &(fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index]);
-	char * out = (char*) ptr;
+__device__ char *fcb_get_name(FileSystem *fs, int index)
+{
+  uchar *ptr = &(fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index]);
+  char *out = (char *)ptr;
   return out;
-} 
+}
 
-__device__ void fcb_set_name(FileSystem *fs, int index, char *file_name) {
-  //set new file name
+__device__ void fcb_set_name(FileSystem *fs, int index, char *file_name)
+{
+  // set new file name
   uchar temp = *file_name;
-	char * temp_pt = file_name;
+  char *temp_pt = file_name;
   int cnt = 0;
-  while (temp != '\0') {
+  while (temp != '\0')
+  {
     fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + cnt] = temp;
-    temp_pt ++;
+    temp_pt++;
     cnt++;
     temp = *temp_pt;
-    if (cnt == fs->MAX_FILENAME_SIZE) {
+    if (cnt == fs->MAX_FILENAME_SIZE)
+    {
       printf("file name exceed the limit\n");
     }
   }
   fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + cnt] = '\0';
   return;
-} 
+}
 
-__device__ void fcb_set_validbit(FileSystem *fs, int index) {
+__device__ void fcb_set_validbit(FileSystem *fs, int index)
+{
   fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 20] = 0x01;
   return;
-} 
+}
 
-__device__ void fcb_clear_validbit(FileSystem *fs, int index) {
+__device__ void fcb_clear_validbit(FileSystem *fs, int index)
+{
   fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 20] = 0x00;
   return;
-} 
+}
 
-__device__ bool fcb_get_validbit(FileSystem *fs, int index) {
+__device__ bool fcb_get_validbit(FileSystem *fs, int index)
+{
   if (fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 20] == 0x00)
   {
     return false;
-  } 
-  return true;  
-} 
+  }
+  return true;
+}
 
-__device__ void fcb_set_dir(FileSystem *fs, int index) {
+__device__ void fcb_set_dir(FileSystem *fs, int index)
+{
   fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 21] = 0x01;
   return;
-} 
+}
 
-__device__ bool fcb_check_dir(FileSystem *fs, int index) {
+__device__ bool fcb_check_dir(FileSystem *fs, int index)
+{
   if (fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 21] == 0x00)
   {
     return false;
-  } 
-  return true;  
-} 
+  }
+  return true;
+}
 
-__device__ void fcb_set_start(FileSystem *fs, int index, int start) {
+__device__ void fcb_set_start(FileSystem *fs, int index, int start)
+{
   u16 in = start;
-  u16* start_ptr = (u16*)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 22];
+  u16 *start_ptr = (u16 *)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 22];
   *start_ptr = in;
   return;
-} 
+}
 
-__device__ int fcb_get_start(FileSystem *fs, int index) {
-  u16* start_ptr = (u16*)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 22];
-  
+__device__ int fcb_get_start(FileSystem *fs, int index)
+{
+  u16 *start_ptr = (u16 *)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 22];
+
   int out = *start_ptr;
   return out;
-} 
+}
 
-__device__ void fcb_set_size(FileSystem *fs, int index, int size) {
-  int* size_ptr = (int*)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 24];
+__device__ void fcb_set_size(FileSystem *fs, int index, int size)
+{
+  int *size_ptr = (int *)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 24];
   *size_ptr = size;
   return;
-} 
+}
 
-__device__ int fcb_get_size(FileSystem *fs, int index) {
-  int* size_ptr = (int*)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 24];
+__device__ int fcb_get_size(FileSystem *fs, int index)
+{
+  int *size_ptr = (int *)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 24];
   return *size_ptr;
-} 
+}
 
-__device__ void fcb_set_createtime(FileSystem *fs, int index, u32 createtime) {
+__device__ void fcb_set_createtime(FileSystem *fs, int index, u32 createtime)
+{
   u16 in = createtime;
-  u16* create_time_ptr = (u16*)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 28];
+  u16 *create_time_ptr = (u16 *)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 28];
   *create_time_ptr = in;
   return;
-} 
+}
 
-__device__ int fcb_get_createtime(FileSystem *fs, int index) {
-  u16* create_time_ptr = (u16*)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 28];
+__device__ int fcb_get_createtime(FileSystem *fs, int index)
+{
+  u16 *create_time_ptr = (u16 *)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 28];
   int out = *create_time_ptr;
   return out;
-} 
+}
 
-__device__ void fcb_set_modifytime(FileSystem *fs, int index, u32 modifytime) {
+__device__ void fcb_set_modifytime(FileSystem *fs, int index, u32 modifytime)
+{
   u16 in = modifytime;
-  u16* modifytime_ptr = (u16*) &fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 30];
+  u16 *modifytime_ptr = (u16 *)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 30];
   *modifytime_ptr = in;
   return;
-} 
+}
 
-__device__ int fcb_get_modifytime(FileSystem *fs, int index) {
-  u16* modifytime_ptr = (u16*) &fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 30];
+__device__ int fcb_get_modifytime(FileSystem *fs, int index)
+{
+  u16 *modifytime_ptr = (u16 *)&fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index + 30];
   int out = *modifytime_ptr;
   return out;
-} 
+}

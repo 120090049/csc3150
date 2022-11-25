@@ -6,70 +6,53 @@
 
 __device__ void user_program(FileSystem *fs, uchar *input, uchar *output) {
 
+u32 fp = fs_open(fs, "32-block-0", G_WRITE);
+    fs_write(fs, input, 32, fp);
+    for (int j = 0; j < 1023; ++j) {
+        char tag[] = "1024-block-????";
+        int i = j;
+        tag[11] = static_cast<char>(i / 1000 + '0');
+        i = i % 1000;
+        tag[12] = static_cast<char>(i / 100 + '0');
+        i = i % 100;
+        tag[13] = static_cast<char>(i / 10 + '0');
+        i = i % 10;
+        tag[14] = static_cast<char>(i + '0');
+        fp = fs_open(fs, tag, G_WRITE);
+        fs_write(fs, input + j * 1024, 1024, fp);
+    }
+    fs_gsys(fs, RM, "32-block-0");
+    // now it has one 32byte at first, 1023 * 1024 file in the middle
+    printf_VCB(fs, 0, 31);
+    printf_VCB(fs, 32, 63);
 
-// 	char name[20] = "clp\0";
-// 	u32 fp = fs_open(fs, "t.txt\0", G_WRITE);
-// 	printf_bin(fp);
-// 	fs_write(fs, input, 64, fp);
-// 	printf_fcb(fs, 0);
-// printf("--------------------\n");
-// 	fp = fs_open(fs, "b.txt\0", G_WRITE);
-// 	printf_bin(fp);
-// 	fs_write(fs, input, 64, fp);
-// 	printf_fcb(fs, 1);
+    fp = fs_open(fs, "1024-block-1023", G_WRITE);
+    printf("triggering gc\n");
+    fs_write(fs, input + 1023 * 1024, 1024, fp);
 
-// printf("--------------------\n");
-// 	fp = fs_open(fs, "t.txt\0", G_WRITE);
-// 	printf_bin(fp);
-// 	fs_write(fs, input, 64, fp);
-// 	printf_fcb(fs, 0);
-
-// 	printf("%d\n", vcb_get(fs, 0));
-// 	printf("%d\n", vcb_get(fs, 1));
-// 	printf("%d\n", vcb_get(fs, 2));
-// 	printf("%d\n", vcb_get(fs, 3));
-// 	printf("%d\n", vcb_get(fs, 4));
-// 	printf("%d\n", vcb_get(fs, 5));
-// 	printf("%d\n", vcb_get(fs, 6));
-// 	printf("%d\n", vcb_get(fs, 7));
-// 	printf("%d\n", vcb_get(fs, 8));
-// 	uchar a[64];
-// 	uchar b[32];
-// 	u32 fp = fs_open(fs, "t.txt\0", G_WRITE);  // t 0-64  0 1   0 0
-// 	fs_write(fs, input, 64, fp);
-// 	printf_fcb(fs, 0);
-// 	printf_VCB(fs, 0, 10);
-// printf("--------------------\n");
-
-// 	fp = fs_open(fs, "b.txt\0", G_WRITE);   	// b 32-64  2   1 1
-// 	fs_write(fs, input + 32, 32, fp);
-// 	printf_fcb(fs, 1);
-// 	printf_VCB(fs, 0, 10);
-// printf("--------------------\n");
-
-// 	fp = fs_open(fs, "t.txt\0", G_WRITE);    // t 32-64     0   0 2
-// 	fs_write(fs, input + 32, 32, fp);
-// 	printf_fcb(fs, 0);
-// 	printf_VCB(fs, 0, 10);
-// printf("--------------------\n");
-
-// 	fp = fs_open(fs, "t.txt\0", G_READ);   // t read 32-64  0   0 2
-// 	fs_read(fs, a, 32, fp);
-// 	printf_fcb(fs, 0);
-// 	printf_VCB(fs, 0, 10);
-// 	// printf("read result:\n %s\n", a);
-// printf("--------------------\n");
-// 	// fs_gsys(fs,LS_D);
-// 	// fs_gsys(fs, LS_S);
-
-// 	fp = fs_open(fs, "b.txt\0", G_WRITE);  // b      64-76  1   1 3
-// 	fs_write(fs, input + 64, 12, fp);
-// 	printf_fcb(fs, 1);
-// 	printf_VCB(fs, 0, 10);
-// printf("--------------------\n");
-
-
-
+    // fs_gsys(fs, LS_D);
+    // for (int j = 0; j < 1024; ++j) {
+    //     char tag[] = "1024-block-????";
+    //     int i = j;
+    //     tag[11] = static_cast<char>(i / 1000 + '0');
+    //     i = i % 1000;
+    //     tag[12] = static_cast<char>(i / 100 + '0');
+    //     i = i % 100;
+    //     tag[13] = static_cast<char>(i / 10 + '0');
+    //     i = i % 10;
+    //     tag[14] = static_cast<char>(i + '0');
+    //     fp = fs_open(fs, tag, G_READ);
+    //     fs_read(fs, output + j * 1024, 1024, fp);
+    // }
+    printf("Done!\n");
+	
 	return;
 
 }
+
+	// printf_VCB(fs, 0, 20);
+	// for (int i=0; i<13; i++){
+	// 	printf_fcb(fs, i);
+
+	// }
+	// printf("\n\n\n"); 

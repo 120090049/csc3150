@@ -1,2 +1,4 @@
-gcc test.c -o testclp
+nvcc --relocatable-device-code=true test.cu -o testclp
+
 ./testclp
+

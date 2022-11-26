@@ -2,9 +2,11 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
+
+
 __device__ void user_program(FileSystem *fs, uchar *input, uchar *output) {
-	
-	
+
+   
 	/////////////// Test Case 1  ///////////////
 	u32 fp = fs_open(fs, "t.txt\0", G_WRITE);
 	fs_write(fs, input, 64, fp);
@@ -146,6 +148,7 @@ __device__ void user_program(FileSystem *fs, uchar *input, uchar *output) {
 	
     // u32 fp = fs_open(fs, "32-block-0", G_WRITE);
     // fs_write(fs, input, 32, fp);
+
     // for (int j = 0; j < 1023; ++j) {
     //     char tag[] = "1024-block-????";
     //     int i = j;
@@ -166,7 +169,7 @@ __device__ void user_program(FileSystem *fs, uchar *input, uchar *output) {
     // printf("triggering gc\n");
     // fs_write(fs, input + 1023 * 1024, 1024, fp);
 
-
+    // printf("------------------------\n");
     // fs_gsys(fs, LS_D);
     // for (int j = 0; j < 1024; ++j) {
     //     char tag[] = "1024-block-????";
@@ -181,5 +184,14 @@ __device__ void user_program(FileSystem *fs, uchar *input, uchar *output) {
     //     fp = fs_open(fs, tag, G_READ);
     //     fs_read(fs, output + j * 1024, 1024, fp);
     // }
+
+    // for (int i=0; i<1024; i++){
+    //     for (int j=0; j<1024; j++) {
+    //         output[i*1024 + j] =  static_cast<char>(i%50 + '0');
+
+    //     }
+    // }
 	
+	return;
+
 }

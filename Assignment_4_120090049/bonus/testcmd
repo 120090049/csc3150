@@ -1,0 +1,4 @@
+cmp ./snapshot.bin snapshot1
+cmp ./snapshot.bin snapshot2
+cmp ./snapshot.bin snapshot3
+cmp ./snapshot.bin data.bin 

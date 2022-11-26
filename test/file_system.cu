@@ -126,10 +126,12 @@ __device__ void fs_read(FileSystem *fs, uchar *output, u32 size, u32 fp)
     }
     // start to read
     int start_addr = fs->FILE_BASE_ADDRESS + start_index * fs->BLOCK_SIZE;
+    // printf("start_index = %d\n", start_index);
     for (int i = 0; i < size; i++)
     {
       output[i] = fs->volume[start_addr + i];
-      // printf("%d and %c", i, output[i]);
+      printf("");
+
     }
     return;
   }
@@ -165,33 +167,32 @@ __device__ u32 fs_write(FileSystem *fs, uchar *input, u32 size, u32 fp)
     // printf("%d = allocate(fs, %d)\n", new_start_index, need_block_num);
     if (new_start_index == -1)
     {
-      // compact and allocate again
+      // compact and then allocate again
       compact(fs);
-      printf_VCB(fs, 0, 31);
-      printf_VCB(fs, 32, 63);
+     
       new_start_index = allocate(fs, need_block_num);
+      // printf("new_start_index = %d\n", new_start_index);
       if (new_start_index == -1) // still cannot allocate, give out error!
       {
         printf("Error in fswrite! the disk is full, cannot allocate anymore!\n");
         return 1;
       }
     }
-    else
-    {
-      // VCB has already been updated in the allocate fu
-      // update FCB
-      fcb_set_start(fs, FCB_index, new_start_index);
-      fcb_set_size(fs, FCB_index, size);
-      fcb_set_modifytime(fs, FCB_index, gtime_m);
-      gtime_m++;
+    
+    // VCB has already been updated in the allocate fu
+    // update FCB
+    fcb_set_start(fs, FCB_index, new_start_index);
+    fcb_set_size(fs, FCB_index, size);
+    fcb_set_modifytime(fs, FCB_index, gtime_m);
+    gtime_m++;
 
-      // write into the file blocks
-      int new_addr = fs->FILE_BASE_ADDRESS + fs->BLOCK_SIZE * new_start_index;
-      for (int i = 0; i < size; i++)
-      {
-        fs->volume[new_addr + i] = input[i];
-      }
+    // write into the file blocks
+    int new_addr = fs->FILE_BASE_ADDRESS + fs->BLOCK_SIZE * new_start_index;
+    for (int i = 0; i < size; i++)
+    {
+      fs->volume[new_addr + i] = input[i];
     }
+  
     return 0;
   }
   else
@@ -330,33 +331,38 @@ __device__ void compact(FileSystem *fs)
   while (true)
   {
     /* code */
-    int start = fs->FCB_ENTRIES;
-    int index;
+    int start = fs->FCB_ENTRIES*fs->FCB_SIZE;
+    int index = -1;
     for (int i=0; i<fs->FCB_ENTRIES; i++)
     {
-      int start_temp = fcb_get_start(fs, i);
-      int size_temp = fcb_get_size(fs, i);
-      if ( (start_temp != 0xffff) && (start_temp >= target_start) && (start_temp < start))
-      {
-        start = start_temp;
-        index = i;
+      if (fcb_get_validbit(fs, i)) {
+        int start_temp = fcb_get_start(fs, i);
+        int size_temp = fcb_get_size(fs, i);
+        if ( (start_temp != 0xffff) && (start_temp >= target_start) && (start_temp < start))
+        {
+          start = start_temp;
+          index = i;
+          
+        }
       }
     }
-    if (start != fs->FCB_ENTRIES) { // doesn't find blocks needed to be compacted
+    // printf("target_start = %d, start = %d,\n", target_start, start);
+    // printf("index = %d\n", index);
+    if (start == fs->FCB_ENTRIES*fs->FCB_SIZE) { // doesn't find blocks needed to be compacted
       return;
     }
     else {
       int size = fcb_get_size(fs, index);
-      if (target_start != start) { // there is fragmentation between two consecutive blocks
-        
+      if (target_start != start) { // there is fragmentation between two consecutive blocks  
         // start to compact!
         // generate a handler to use fs_read
         u32 handler = 0;
         handler |= (1 << 31);
         handler |= (index << 16);                 // FCB index
-        handler |= (u16)fcb_get_start(fs, start); // start block index
+        handler |= (u16)fcb_get_start(fs, index); // start block index
         uchar buffer[1024];
         fs_read(fs, buffer, size, handler);
+        // printf("index = %d || buffer = %d\n", index, buffer[0]);
 
         // clear VCB and file blocks
         int occupied_blocks = (size + fs->BLOCK_SIZE -1) / fs->BLOCK_SIZE;
@@ -375,7 +381,7 @@ __device__ void compact(FileSystem *fs)
           fs->volume[start_addr + i] = buffer[i];
         }
 
-        target_start += size;
+        target_start += occupied_blocks;
       }
       else {
         target_start += size;

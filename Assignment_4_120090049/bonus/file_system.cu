@@ -241,7 +241,6 @@ __device__ u32 fs_write(FileSystem *fs, uchar *input, u32 size, u32 fp)
     int start_index = fp & 0xffff;          // retrieve the start of directory file
     int directory_FCB_index = (fp & 0xfff0000) >> 16; // retrieve the FCB block index
 
-    printf("%s\n\n", (char *)input);
     int file_FCB_index = fcb_use_name_retrieve_index(fs, (char *)input);
     
     if (tag == 1) { // write in data
@@ -259,7 +258,6 @@ __device__ u32 fs_write(FileSystem *fs, uchar *input, u32 size, u32 fp)
       }
       // update data in fcb
       int size = fcb_get_size(fs, directory_FCB_index) + str_len((char *)input);
-      printf("SIZE %d\n", str_len((char *)input));
       fcb_set_size(fs, directory_FCB_index, size);
       fcb_set_modifytime(fs, directory_FCB_index, gtime_m);
       gtime_m ++;
@@ -287,8 +285,7 @@ __device__ u32 fs_write(FileSystem *fs, uchar *input, u32 size, u32 fp)
   {
     int start_index = fp & 0xffff;          // retrieve the start file block
     int FCB_index = (fp & 0xfff0000) >> 16; // retrieve the FCB block index
-    // printf("start_index: %d\n", start_index);
-    // printf("FCB_index: %d\n", FCB_index);
+
 
     int need_block_num = (size - 1 + fs->BLOCK_SIZE) / fs->BLOCK_SIZE;
     int pre_size = fcb_get_size(fs, FCB_index);
@@ -356,7 +353,7 @@ __device__ void fs_gsys(FileSystem *fs, int op)
           break;
         }
       }
-      if (target_fcb_index != -1)
+      if (target_fcb_index != -1 && pwd_file_is_under_curr_dir(fs, fcb_get_name(fs, target_fcb_index) ) && (target_fcb_index != 0) )
       {
         char *filename;
         filename = fcb_get_name(fs, target_fcb_index);
@@ -364,6 +361,7 @@ __device__ void fs_gsys(FileSystem *fs, int op)
       }
     }
   }
+
   else if (op == LS_S)// sorted by size
   {
     printf("===sorted by file size===\n");
@@ -417,9 +415,29 @@ __device__ void fs_gsys(FileSystem *fs, int op)
           if (list_for_creating_time[i] == k)
           {
             int FCB_index = list_for_equal_size[i];
-            printf("%s %d\n", fcb_get_name(fs, FCB_index), fcb_get_size(fs, FCB_index));
+            bool tag = pwd_file_is_under_curr_dir(fs, fcb_get_name(fs, FCB_index) );
+            if (tag && (FCB_index != 0)) {
+              printf("%s %d\n", fcb_get_name(fs, FCB_index), fcb_get_size(fs, FCB_index));
+            }
           }
         }
+      }
+    }
+  }
+  else if (op == PWD) {
+    printf("/");
+    for(int i=1; i<4; i++){
+      if (gpwd[i] != -1) {
+        printf("%s/", fcb_get_name(fs, gpwd[i]));
+      }
+    }
+    printf("\n");
+  }
+  else if (op == CD_P) {
+    for(int i=1; i<4; i++){
+      if (gpwd[i] != -1) {
+        gpwd[i] = -1;
+        return;
       }
     }
   }
@@ -463,10 +481,31 @@ __device__ void fs_gsys(FileSystem *fs, int op, char *file_name)
   }
   else if (op == MKDIR) {
     fs_open(fs, file_name, G_PWD);
+    return;
+  }
+  else if (op = CD) {
+    if (pwd_file_is_under_curr_dir(fs, file_name)) {
+      int fcb_index_of_target_dir = fcb_use_name_retrieve_index(fs, file_name);
+      if (!fcb_check_dir(fs, fcb_index_of_target_dir)){
+        printf("CD false! The %s is not a directory! \n", file_name);
+        return;
+      }
+      // get to the target directory
+      for (int i=1; i<4; i++) {
+        if (gpwd[i] == -1) {
+          gpwd[i] = fcb_index_of_target_dir;
+          return;
+        }
+      }
+    }
+    else {
+      printf("CD false! No dir names as %s under the current directory\n");
+      return;
+    }
   }
   else
   {
-    printf("this is the RM operation, but your command is wrong, bro!\n");
+    printf("this is the fs_gsy(3) operation, but your command is wrong, bro!\n");
     return;
   }
 }
@@ -474,6 +513,8 @@ __device__ void fs_gsys(FileSystem *fs, int op, char *file_name)
 // utils
 
 // functions for pwd
+
+// retrieve the fcb index of current dir
 __device__ int pwd_get(void) {
   for (int i=3; i>=0; i--) {
     if (gpwd[i] != -1) {
@@ -484,6 +525,18 @@ __device__ int pwd_get(void) {
   return -1;
 }
 
+__device__ bool pwd_file_is_under_curr_dir(FileSystem *fs, char* file_name) {
+  int fcb_index_of_target_file = fcb_use_name_retrieve_index(fs, file_name);
+  int ls[50];
+  ls_get(fs, ls);
+  for (int i=0; i<50; i++) {
+    if (ls[i] == fcb_index_of_target_file) {
+      return true;
+    }
+  }
+  return false;
+}
+// return a 50 entry list which stores index of fcb
 __device__ void ls_get(FileSystem *fs, int* list) {
   int pwd_fcb_index = pwd_get();
   u32 fp = fs_open(fs, fcb_get_name(fs, pwd_fcb_index), G_PWD);

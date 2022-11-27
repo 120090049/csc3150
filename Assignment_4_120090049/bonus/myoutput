@@ -1,0 +1,37 @@
+===sorted by modified time===
+t.txt
+b.txt
+===sorted by file size===
+t.txt 32
+b.txt 32
+===sorted by modified time===
+t.txt
+b.txt
+app
+===sorted by file size===
+t.txt 32
+b.txt 32
+app 0
+===sorted by file size===
+===sorted by file size===
+a.txt 64
+soft 0
+===sorted by modified time===
+a.txt
+soft
+/app/soft/
+===sorted by file size===
+B.txt 1024
+C.txt 1024
+D.txt 1024
+A.txt 64
+===sorted by file size===
+B.txt 1024
+C.txt 1024
+D.txt 1024
+A.txt 64
+/soft/
+===sorted by file size===
+t.txt 32
+b.txt 32
+app 11

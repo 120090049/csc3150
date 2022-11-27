@@ -60,6 +60,7 @@ __device__ void fs_gsys(FileSystem *fs, int op, char *s);
 
 // functions for pwd
 __device__ int pwd_get(void);
+__device__ bool pwd_file_is_under_curr_dir(FileSystem *fs, char* file_name);
 __device__ void ls_get(FileSystem *fs, int* list);
 
 // major functions

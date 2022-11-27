@@ -6,6 +6,7 @@
 
 __device__ __managed__ u32 gtime_m = 0;
 __device__ __managed__ u32 gtime_c = 0;
+__device__ __managed__ int gpwd[4] = {0, -1, -1, -1};   // index list
 
 __device__ void fs_init(FileSystem *fs, uchar *volume, int SUPERBLOCK_SIZE,
                         int FCB_SIZE, int FCB_ENTRIES, int VOLUME_SIZE,
@@ -36,6 +37,30 @@ __device__ void fs_init(FileSystem *fs, uchar *volume, int SUPERBLOCK_SIZE,
   {
     fs->volume[i] = 0;
   }
+  // init the root dir
+  fs_open(fs, "root\0", G_PWD);
+  // fs_gsys(fs, CD, "\0");
+}
+
+__device__ int str_len(char str[])
+{
+	char *p = str;
+	int count = 0;
+	while (*p++ != '\0')
+	{
+		count++;
+	}
+	return count+1;
+}
+
+__device__ bool num_in_list(int num, int* list) 
+{
+	for (int i=0; i<50; i++) {
+		if (num == list[i]) {
+      return true;
+    }
+	}
+  return false;
 }
 
 // init FCB
@@ -51,7 +76,6 @@ __device__ void fs_init(FileSystem *fs, uchar *volume, int SUPERBLOCK_SIZE,
 __device__ u32 fs_open(FileSystem *fs, char *file_name, int op)
 {
   int target_fcb_index = -1;
-
   for (int i = 0; i < fs->FCB_ENTRIES; i++)
   {
     if ((fcb_get_validbit(fs, i)) && (cmp_str(fcb_get_name(fs, i), file_name)))
@@ -60,6 +84,7 @@ __device__ u32 fs_open(FileSystem *fs, char *file_name, int op)
       break;
     }
   }
+
   if (target_fcb_index == -1)
   { // not find the target
     for (int i = 0; i < fs->FCB_ENTRIES; i++)
@@ -83,6 +108,37 @@ __device__ u32 fs_open(FileSystem *fs, char *file_name, int op)
     fcb_set_size(fs, target_fcb_index, 0);
     fcb_set_createtime(fs, target_fcb_index, gtime_c);
     gtime_c++;
+  /////////////////////////////////////////
+  // newly append
+
+    if (op == G_PWD) {
+      fcb_set_dir(fs, target_fcb_index);
+      // fcb_set_size(fs, target_fcb_index, 1024);
+      int start_index_in_fileblocks = allocate(fs, fs->BLOCK_SIZE);
+      fcb_set_start(fs, target_fcb_index, start_index_in_fileblocks);
+      for (int i=start_index_in_fileblocks; i<start_index_in_fileblocks+fs->BLOCK_SIZE; i++) {
+        vcb_set(fs, i);
+      }
+    }
+    if (op == G_READ || op == G_WRITE || op == G_PWD) { // a new file is added, update the the directory file
+      // update content in fcb of the directory file
+      int current_pwd_index = pwd_get();
+      // int size = ( fcb_get_size(fs, current_pwd_index)+str_len(file_name)+1);
+      // fcb_set_size(fs, current_pwd_index, size);
+      fcb_set_modifytime(fs, current_pwd_index, gtime_m);
+      gtime_m ++;
+      // update content in the directory file
+      // u32 handler = fs_open(fs, fcb_get_name(fs, current_pwd_index), G_PWD);
+      u32 handler = 0;
+      handler |= (1<<31);
+      handler |= (1<<30);
+      handler |= ((u16)current_pwd_index << 16);
+      int start = fcb_get_start(fs, current_pwd_index);
+      handler |= (u16)start;
+      // printf("here!\n");
+      fs_write(fs, (uchar*)file_name, 1, handler);
+    }
+  /////////////////////////////////////////
   }
   // after all of these, we have already get or allocate the FCB
   // The handler consists of three part, read/write bit + FCB index + start block
@@ -91,8 +147,13 @@ __device__ u32 fs_open(FileSystem *fs, char *file_name, int op)
   {
     handler |= (1 << 31);
   }
-  if (op == G_WRITE)
+  else if (op == G_WRITE)
   {
+    handler |= (1 << 30);
+  } 
+  else if (op == G_PWD)
+  {
+    handler |= (1 << 31);
     handler |= (1 << 30);
   }
   handler |= (target_fcb_index << 16);                 // FCB index
@@ -100,13 +161,15 @@ __device__ u32 fs_open(FileSystem *fs, char *file_name, int op)
   return handler;
 }
 
+
 __device__ void fs_read(FileSystem *fs, uchar *output, u32 size, u32 fp)
 {
-  bool out = fp & (1 << 31); // check the valid bit
-  if (out)
+  bool out_w = fp & (1 << 30); // check the valid bit
+  bool out_r = fp & (1 << 31);
+  int start_index = fp & 0xffff;          // retrieve the start file block
+  int FCB_index = (fp & 0xfff0000) >> 16; // retrieve the FCB block index
+  if (out_r && !out_w) // read for normal file, read into the output
   {
-    int start_index = fp & 0xffff;          // retrieve the start file block
-    int FCB_index = (fp & 0xfff0000) >> 16; // retrieve the FCB block index
 
     int file_size = fcb_get_size(fs, FCB_index);
 
@@ -135,6 +198,27 @@ __device__ void fs_read(FileSystem *fs, uchar *output, u32 size, u32 fp)
     }
     return;
   }
+  /////////////////////////////////////////
+  // newly append
+  else if (out_r && out_w) { // read a directory file
+    int* out_ptr = (int*) output;
+    int new_addr = fs->FILE_BASE_ADDRESS + fs->BLOCK_SIZE * start_index;
+    
+    for (int i = 0; i < 50; i++)
+    {
+      // read the index of the file fcb from the directory file blocks
+      u16 *index_ptr = (u16 *)&fs->volume[new_addr + 2*i];
+      if (*index_ptr != 0) {                                
+        *out_ptr = (int)*index_ptr;
+      }    
+      else {
+        *out_ptr = 0;
+      }
+      out_ptr ++;
+    }
+    return;
+  }
+  /////////////////////////////////////////
   else
   {
     printf("Invalid operation, this is a read operation, bro!\n");
@@ -144,8 +228,62 @@ __device__ void fs_read(FileSystem *fs, uchar *output, u32 size, u32 fp)
 
 __device__ u32 fs_write(FileSystem *fs, uchar *input, u32 size, u32 fp)
 {
-  bool out = fp & (1 << 30); // check the valid bit
-  if (out)
+  bool out_w = fp & (1 << 30); // check the valid bit
+  bool out_r = fp & (1 << 31);
+  
+  int tag = size; // tag = 1 means write in, 0 means remove out from the directory file
+  if (out_r && out_w) // this means operating on a directory file
+  {
+    
+    // there are two fcb blocks involved. The directory fcb and the fcb of the input file
+    // we want to write the index of the file fcb into the directory file
+
+    int start_index = fp & 0xffff;          // retrieve the start of directory file
+    int directory_FCB_index = (fp & 0xfff0000) >> 16; // retrieve the FCB block index
+
+    printf("%s\n\n", (char *)input);
+    int file_FCB_index = fcb_use_name_retrieve_index(fs, (char *)input);
+    
+    if (tag == 1) { // write in data
+      // write in data in file block
+      int new_addr = fs->FILE_BASE_ADDRESS + fs->BLOCK_SIZE * start_index;
+      for (int i = 0; i < 50; i++)
+      {
+        // write the index of the file fcb into the directory file
+        u16 *index_ptr = (u16 *)&fs->volume[new_addr + 2*i];
+        if (*index_ptr == 0) { // since fcb 0 has already occupied by the root directory file, 
+                                // therefore there should be no other fcb with index 0
+          *index_ptr = (u16)file_FCB_index;
+          break;
+        }    
+      }
+      // update data in fcb
+      int size = fcb_get_size(fs, directory_FCB_index) + str_len((char *)input);
+      printf("SIZE %d\n", str_len((char *)input));
+      fcb_set_size(fs, directory_FCB_index, size);
+      fcb_set_modifytime(fs, directory_FCB_index, gtime_m);
+      gtime_m ++;
+    }
+    else if (tag == 0) // remove filename 
+    {
+      // remove filename from the file block
+      int new_addr = fs->FILE_BASE_ADDRESS + fs->BLOCK_SIZE * start_index;
+      for (int i = 0; i < 50; i++)
+      {
+        // write the index of the file fcb into the directory file
+        u16 *index_ptr = (u16 *)&fs->volume[new_addr + 2*i];
+        if (*index_ptr == file_FCB_index) { 
+          *index_ptr = 0;
+          break;
+        }    
+      }
+      // update data in fcb
+      int size = fcb_get_size(fs, directory_FCB_index) - str_len((char *)input);
+      fcb_set_modifytime(fs, directory_FCB_index, gtime_m);
+      gtime_m ++;
+    }
+  }
+  else if (out_w && !out_r) // just write operation for normal file operation
   {
     int start_index = fp & 0xffff;          // retrieve the start file block
     int FCB_index = (fp & 0xfff0000) >> 16; // retrieve the FCB block index
@@ -226,7 +364,7 @@ __device__ void fs_gsys(FileSystem *fs, int op)
       }
     }
   }
-  else // sorted by size
+  else if (op == LS_S)// sorted by size
   {
     printf("===sorted by file size===\n");
     int pre_tar_size = 2000000; // 2,000,000 > 1MB
@@ -302,19 +440,29 @@ __device__ void fs_gsys(FileSystem *fs, int op, char *file_name)
         break;
       }
     }
-    if (target_fcb_index == -1)
+    int ls[50];
+    ls_get(fs, ls);
+    if (target_fcb_index == -1 || (num_in_list(target_fcb_index, ls) == 0))
     {
-      printf("The file you want to remove do not exists!\n");
+      printf("The file you want to remove do not exists under the current directory!\n");
     }
     else
     {
+      // remove the file from the directory fileblocks and update the directory FCB
+      u32 handler = fs_open(fs, fcb_get_name(fs, pwd_get()), G_PWD);
+      fs_write(fs, (uchar*)file_name, 0, handler);
+
       int start = fcb_get_start(fs, target_fcb_index);
       int size = fcb_get_size(fs, target_fcb_index);
       int occupied_block_num = (size + fs->BLOCK_SIZE - 1) / fs->BLOCK_SIZE;
       clear_VCB_fileblocks(fs, start, occupied_block_num);
       fcb_clear(fs, target_fcb_index);
+
     }
     return;
+  }
+  else if (op == MKDIR) {
+    fs_open(fs, file_name, G_PWD);
   }
   else
   {
@@ -325,6 +473,24 @@ __device__ void fs_gsys(FileSystem *fs, int op, char *file_name)
 
 // utils
 
+// functions for pwd
+__device__ int pwd_get(void) {
+  for (int i=3; i>=0; i--) {
+    if (gpwd[i] != -1) {
+      return gpwd[i];
+    }
+  }
+  printf("Current directory is invalid!\n");
+  return -1;
+}
+
+__device__ void ls_get(FileSystem *fs, int* list) {
+  int pwd_fcb_index = pwd_get();
+  u32 fp = fs_open(fs, fcb_get_name(fs, pwd_fcb_index), G_PWD);
+  fs_read(fs, (uchar*) list, NULL, fp);
+  return;
+}
+// major functions
 __device__ void compact(FileSystem *fs)
 {
   int target_start = 0;
@@ -521,6 +687,24 @@ __device__ bool vcb_get(FileSystem *fs, int block_index)
 }
 
 // FCB
+__device__ int fcb_use_name_retrieve_index(FileSystem *fs, char *name){
+  int target_fcb_index = -1;
+  for (int i = 0; i < fs->FCB_ENTRIES; i++)
+  {
+    // printf("%s v.s. %s\n",name, fcb_get_name(fs, i));
+    if ((fcb_get_validbit(fs, i)) && (cmp_str(fcb_get_name(fs, i), name)))
+    {
+      target_fcb_index = i;
+      break;
+    }
+  }
+  if (target_fcb_index == -1) // not find the target
+  { 
+    printf("target file do not exist!\n");
+  }
+  return target_fcb_index;
+}
+
 __device__ void printf_fcb(FileSystem *fs, int index)
 {
   char *getname = fcb_get_name(fs, index);
@@ -564,8 +748,10 @@ __device__ void fcb_clear(FileSystem *fs, int index)
 
 __device__ char *fcb_get_name(FileSystem *fs, int index)
 {
+
   uchar *ptr = &(fs->volume[fs->SUPERBLOCK_SIZE + fs->FCB_SIZE * index]);
   char *out = (char *)ptr;
+  // printf("i am fine\n");
   return out;
 }
 
@@ -684,3 +870,4 @@ __device__ int fcb_get_modifytime(FileSystem *fs, int index)
   int out = *modifytime_ptr;
   return out;
 }
+

@@ -8,11 +8,11 @@ b.txt 32
 app d
 t.txt
 b.txt
-===sort by file size===
+===sort by file size===  
 t.txt 32
 b.txt 32
 app 0 d
-===sort by file size===
+===sort by file size===   /app
 ===sort by file size===
 a.txt 64
 b.txt 32
@@ -22,24 +22,24 @@ soft d
 b.txt
 a.txt
 /app/soft
-===sort by file size===
+===sort by file size===   /app/soft
 B.txt 1024
 C.txt 1024
 D.txt 1024
 A.txt 64
-===sort by file size===
+===sort by file size===   /app (3)
 a.txt 64
 b.txt 32
 soft 24 d
 /app
-===sort by file size===
+===sort by file size===   /
 t.txt 32
 b.txt 32
-app 17 d
-===sort by file size===
+app 17 d                  6+6+5
+===sort by file size===   /app
 a.txt 64
 b.txt 32
-===sort by file size===
-t.txt 32
+===sort by file size===  /
+t.txt 32 
 b.txt 32
-app 12 d
+app 12 d                 6+6 

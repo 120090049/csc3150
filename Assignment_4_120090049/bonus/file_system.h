@@ -14,9 +14,18 @@ typedef uint16_t u16;
 #define G_WRITE 1
 #define G_PWD 2
 
+// __device__ void fs_gsys(FileSystem *fs, int op);
 #define LS_D 0
 #define LS_S 1
+#define CD_P 5
+#define PWD 6
+
+// __device__ void fs_gsys(FileSystem *fs, int op, char *s);
 #define RM 2
+#define RM_RF 7
+#define MKDIR 3
+#define CD 4
+
 
 struct FileSystem
 {
@@ -48,6 +57,12 @@ __device__ void fs_gsys(FileSystem *fs, int op, char *s);
 ///////////////////
 
 // utils
+
+// functions for pwd
+__device__ int pwd_get(void);
+__device__ void ls_get(FileSystem *fs, int* list);
+
+// major functions
 __device__ void compact(FileSystem *fs);
 
 __device__ int allocate(FileSystem *fs, int num);
@@ -63,7 +78,8 @@ __device__ void vcb_set(FileSystem *fs, int block_index) ;
 __device__ void vcb_clear(FileSystem *fs, int block_index) ;
 __device__ bool vcb_get(FileSystem *fs, int block_index) ;
 
-// FSB
+// FCB
+__device__ int fcb_use_name_retrieve_index(FileSystem *fs, char *name);
 __device__ void printf_fcb(FileSystem *fs, int index);
 __device__ bool cmp_str(char *str1, char *str2);
 

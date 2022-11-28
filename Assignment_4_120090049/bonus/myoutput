@@ -1,37 +1,45 @@
-===sorted by modified time===
+===sort by modified time===
 t.txt
 b.txt
-===sorted by file size===
+===sort by file size===
 t.txt 32
 b.txt 32
-===sorted by modified time===
+===sort by modified time===
 app d
 t.txt
 b.txt
-===sorted by file size===
+===sort by file size===
 t.txt 32
 b.txt 32
 app 0 d
-===sorted by file size===
-===sorted by file size===
+===sort by file size===
+===sort by file size===
 a.txt 64
+b.txt 32
 soft 0 d
-===sorted by modified time===
+===sort by modified time===
 soft d
+b.txt
 a.txt
-/app/soft/
-===sorted by file size===
+/app/soft
+===sort by file size===
 B.txt 1024
 C.txt 1024
 D.txt 1024
 A.txt 64
-===sorted by file size===
-B.txt 1024
-C.txt 1024
-D.txt 1024
-A.txt 64
-/soft/
-===sorted by file size===
+===sort by file size===
+a.txt 64
+b.txt 32
+soft 24 d
+/app
+===sort by file size===
 t.txt 32
 b.txt 32
-app 11 d
+app 17 d
+===sort by file size===
+a.txt 64
+b.txt 32
+===sort by file size===
+t.txt 32
+b.txt 32
+app 12 d

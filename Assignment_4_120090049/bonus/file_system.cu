@@ -87,24 +87,14 @@ __device__ u32 fs_open(FileSystem *fs, char *file_name, int op)
   int target_fcb_index = -1;
   for (int i = 0; i < fs->FCB_ENTRIES; i++)
   {
-    if ((fcb_get_validbit(fs, i)) && (cmp_str(fcb_get_name(fs, i), file_name)) )
+    if ( (fcb_get_validbit(fs, i)) && (cmp_str(fcb_get_name(fs, i), file_name)) 
+    && (pwd_file_is_under_curr_dir(fs, file_name) || fcb_check_dir(fs, i)) )
     {
       target_fcb_index = i;
       break;
     }
   }
-
-  // for (int i=0; i<50; i++) {
-  //   if (cmp_str(file_name, fcb_get_name(fs, ls[i]))) {
-  //     tag = true;
-  //   }
-  // }
-  // printf("%s is %d\n\n\n", file_name, tag);
-
-  // if (!pwd_file_is_under_curr_dir(fs, file_name)){
-  //   target_fcb_index = -1;
-  // }
-  //printf("lala %\n", target_fcb_index);
+  
   if (target_fcb_index == -1)
   { // not find the target
     for (int i = 0; i < fs->FCB_ENTRIES; i++)
@@ -263,9 +253,9 @@ __device__ u32 fs_write(FileSystem *fs, uchar *input, u32 size, u32 fp)
     int start_index = fp & 0xffff;          // retrieve the start of directory file
     int directory_FCB_index = (fp & 0xfff0000) >> 16; // retrieve the FCB block index
 
-    int file_FCB_index = fcb_use_name_retrieve_index(fs, (char *)input);
     
     if (tag == 1) { // write in data
+      int file_FCB_index = fcb_use_name_retrieve_latest_index(fs, (char *)input);
       // write in data in file block
       int new_addr = fs->FILE_BASE_ADDRESS + fs->BLOCK_SIZE * start_index;
       for (int i = 0; i < 50; i++)
@@ -287,18 +277,33 @@ __device__ u32 fs_write(FileSystem *fs, uchar *input, u32 size, u32 fp)
     else if (tag == 0) // remove filename 
     {
       // remove filename from the file block
-      int new_addr = fs->FILE_BASE_ADDRESS + fs->BLOCK_SIZE * start_index;
+      int addr = fs->FILE_BASE_ADDRESS + fs->BLOCK_SIZE * start_index;
+
+      // get the fcb index to be crossed out from the directory file blocks
+      int fcb_index_to_be_removed = -1;
+      char* filename = (char*) input;
+      for (int k=0; k<fs->FCB_ENTRIES; k++) { // [3, 7]
+        if (pwd_file_is_under_curr_dir_index(fs, k) && 
+        fcb_get_validbit(fs, k) && cmp_str(filename, fcb_get_name(fs, k))){
+          fcb_index_to_be_removed = k;
+        }
+      }
+
+      // cross out the targeted fcb index
       for (int i = 0; i < 50; i++)
       {
-        // write the index of the file fcb into the directory file
-        u16 *index_ptr = (u16 *)&fs->volume[new_addr + 2*i];
-        if (*index_ptr == file_FCB_index) { 
+        u16 *index_ptr = (u16 *)&fs->volume[addr + 2*i];
+        // printf("%d done!\n", (int)(*index_ptr));
+        if (*index_ptr == (u16)fcb_index_to_be_removed) { 
           *index_ptr = 0;
           break;
         }    
+        index_ptr ++;
       }
+
       // update data in fcb
       int size = fcb_get_size(fs, directory_FCB_index) - str_len((char *)input);
+      fcb_set_size(fs, directory_FCB_index, size);
       fcb_set_modifytime(fs, directory_FCB_index, gtime_m);
       gtime_m ++;
     }
@@ -363,7 +368,7 @@ __device__ void fs_gsys(FileSystem *fs, int op)
 {
   if (op == LS_D) // sorted by modified time
   {
-    printf("===sorted by modified time===\n");
+    printf("===sort by modified time===\n");
     for (int time = gtime_m; time >= 0; time--)
     {
       int target_fcb_index = -1;
@@ -375,7 +380,9 @@ __device__ void fs_gsys(FileSystem *fs, int op)
           break;
         }
       }
-      if (target_fcb_index != -1 && pwd_file_is_under_curr_dir(fs, fcb_get_name(fs, target_fcb_index) ) && (target_fcb_index != 0) )
+      // printf("target_fcb_index = %d and time = %d\n", target_fcb_index, time);
+      // printf_ls(fs);
+      if (target_fcb_index != -1 && pwd_file_is_under_curr_dir_index(fs, target_fcb_index ) && (target_fcb_index != 0) )
       {
         char *filename;
         filename = fcb_get_name(fs, target_fcb_index);
@@ -391,7 +398,7 @@ __device__ void fs_gsys(FileSystem *fs, int op)
 
   else if (op == LS_S)// sorted by size
   {
-    printf("===sorted by file size===\n");
+    printf("===sort by file size===\n");
     int pre_tar_size = 2000000; // 2,000,000 > 1MB
     while (true)
     {
@@ -442,7 +449,7 @@ __device__ void fs_gsys(FileSystem *fs, int op)
           if (list_for_creating_time[i] == k)
           {
             int FCB_index = list_for_equal_size[i];
-            bool tag = pwd_file_is_under_curr_dir(fs, fcb_get_name(fs, FCB_index) );
+            bool tag = pwd_file_is_under_curr_dir_index(fs, FCB_index );
             if (tag && (FCB_index != 0)) {
               if (fcb_check_dir(fs, FCB_index)){
                 printf("%s %d d\n", fcb_get_name(fs, FCB_index), fcb_get_size(fs, FCB_index));
@@ -457,16 +464,10 @@ __device__ void fs_gsys(FileSystem *fs, int op)
     }
   }
   else if (op == PWD) {
-    printf("/");
-    for(int i=1; i<4; i++){
-      if (gpwd[i] != -1) {
-        printf("%s/", fcb_get_name(fs, gpwd[i]));
-      }
-    }
-    printf("\n");
+    printf_pwd(fs);
   }
   else if (op == CD_P) {
-    for(int i=1; i<4; i++){
+    for(int i=3; i>0; i--){
       if (gpwd[i] != -1) {
         gpwd[i] = -1;
         return;
@@ -476,23 +477,20 @@ __device__ void fs_gsys(FileSystem *fs, int op)
   return;
 }
 
-__device__ void fs_gsys(FileSystem *fs, int op, char *file_name)
-{
-  /* Implement rm operation here */
-  if (op == RM)
-  {
-    int target_fcb_index = -1;
+__device__ void remove_file(FileSystem *fs, char *file_name) {
+  int target_fcb_index = -1;
     for (int i = 0; i < fs->FCB_ENTRIES; i++)
     {
-      if ((fcb_get_validbit(fs, i)) && (cmp_str(fcb_get_name(fs, i), file_name)))
+      if (pwd_file_is_under_curr_dir_index (fs, i))
       {
-        target_fcb_index = i;
-        break;
+        if (cmp_str(fcb_get_name(fs, i), file_name)) {
+          target_fcb_index = i;
+          break;
+        }
       }
     }
-    int ls[50];
-    ls_get(fs, ls);
-    if (target_fcb_index == -1 || (num_in_list(target_fcb_index, ls) == 0))
+    
+    if (target_fcb_index == -1 )
     {
       printf("The file you want to remove do not exists under the current directory!\n");
     }
@@ -510,30 +508,132 @@ __device__ void fs_gsys(FileSystem *fs, int op, char *file_name)
 
     }
     return;
+}
+
+__device__ void cd_index(FileSystem *fs, int index) {
+  if (pwd_file_is_under_curr_dir_index(fs, index)) {
+    if (!fcb_check_dir(fs, index)){
+      printf("CD false! The %s is not a directory! \n", fcb_get_name(fs, index));
+      return;
+    }
+    // get to the target directory
+    for (int i=1; i<4; i++) {
+      if (gpwd[i] == -1) {
+        gpwd[i] = index;
+        return;
+      }
+    }
+  }
+  else {
+    printf("CD false! No dir names as %s under the current directory\n");
+    return;
+  }
+}
+__device__ void cd_name(FileSystem *fs, char *file_name) {
+  int index = -1;
+  for (int i=0; i<fs->FCB_ENTRIES; i++) {
+    if (pwd_file_is_under_curr_dir_index(fs, i) && cmp_str(file_name, fcb_get_name(fs, i)) && fcb_check_dir(fs, i)) {
+      index = i;
+      break;
+    }
+  }
+  cd_index(fs, index);
+  return;
+}
+
+__device__ void fs_gsys(FileSystem *fs, int op, char *file_name)
+{
+  /* Implement rm operation here */
+  if (op == RM)
+  {
+    remove_file(fs, file_name);
+    return;
   }
   else if (op == MKDIR) {
     fs_open(fs, file_name, G_PWD);
     return;
   }
   else if (op == CD) {
-    if (pwd_file_is_under_curr_dir(fs, file_name)) {
-      int fcb_index_of_target_dir = fcb_use_name_retrieve_index(fs, file_name);
-      if (!fcb_check_dir(fs, fcb_index_of_target_dir)){
-        printf("CD false! The %s is not a directory! \n", file_name);
-        return;
+    cd_name(fs, file_name);
+  }
+ 
+  else if (op == RM_RF) {
+    // record temporary directory index
+    int original_dir_index;
+    for (int i=3; i>0; i--){
+      if (gpwd[i] != -1) {
+        original_dir_index = gpwd[i];
+        break;
       }
-      // get to the target directory
-      for (int i=1; i<4; i++) {
-        if (gpwd[i] == -1) {
-          gpwd[i] = fcb_index_of_target_dir;
-          return;
+    }
+    // cd into the target dir
+    int tar_dir_index = -1;
+    for (int i=0; i<fs->FCB_ENTRIES; i++) {
+      if (pwd_file_is_under_curr_dir_index(fs, i) && cmp_str(file_name, fcb_get_name(fs, i)) && fcb_check_dir(fs, i)) {
+        tar_dir_index = i;
+        break;
+      }
+    }
+
+    int pre_tar_dir = -1;
+    while (true)
+    {
+      if (pre_tar_dir == tar_dir_index) {
+        break;
+      }
+      else {
+        pre_tar_dir = tar_dir_index;
+      }
+      cd_index(fs, tar_dir_index);
+      int ls[50];
+      ls_get(fs, ls);
+      for (int i=0; i<50; i++) {
+        int temp_index = ls[i];
+        if (temp_index != 0) {
+          if (fcb_check_dir(fs, temp_index)) // is directory
+          {
+            tar_dir_index = temp_index; // next goes to this dir
+          }
+          else { // is ordinary file
+            // remove the file from the directory fileblocks and update the directory FCB
+            remove_file(fs, fcb_get_name(fs, temp_index));
+          }
         }
       }
     }
-    else {
-      printf("CD false! No dir names as %s under the current directory\n");
-      return;
+    while (true) {
+      int pre_dir_index; // /soft
+      for (int i=3; i>0; i--){
+        if (gpwd[i] != -1) {
+          pre_dir_index = gpwd[i];
+          break;
+        }
+      }
+      fs_gsys(fs, CD_P);
+
+      int temp_dir_index; // /app
+      for (int i=3; i>0; i--){
+        if (gpwd[i] != -1) {
+          temp_dir_index = gpwd[i];
+          break;
+        }
+      }
+      // remove the dir file /soft
+      int ls[50];
+      ls_get(fs, ls);
+      for (int i=0; i<50; i++) {
+        int temp_index = ls[i];
+        if (temp_index != 0 && fcb_check_dir(fs, temp_index) && (temp_index = pre_dir_index) ) {
+          remove_file(fs, fcb_get_name(fs, temp_index));
+          break;
+        }
+      }
+      if (temp_dir_index == original_dir_index) {
+        return;
+      }
     }
+    return;
+
   }
   else
   {
@@ -557,17 +657,74 @@ __device__ int pwd_get(void) {
   return -1;
 }
 
+
 __device__ bool pwd_file_is_under_curr_dir(FileSystem *fs, char* file_name) {
-  
-  int ls[50];
-  ls_get(fs, ls);
-  for (int i=0; i<50; i++) {
-    if (cmp_str(file_name, fcb_get_name(fs, ls[i]))) {
-      return true;
-    }
+  int pwd_fcb_index = pwd_get(); // get the fcb index of the current directory file
+  int addr = fs->FILE_BASE_ADDRESS + fs->BLOCK_SIZE * fcb_get_start(fs, pwd_fcb_index);
+  bool tag = false;  
+  for (int i = 0; i < 50; i++)
+  {
+    // read the index of the file fcb from the directory file blocks
+    u16 *index_ptr = (u16 *)&fs->volume[addr + 2*i];
+    if (*index_ptr != 0) {                                
+      int index = (int)*index_ptr;
+      if (cmp_str(file_name, fcb_get_name(fs, index))) {
+        tag = true;
+        break;
+      }
+    }    
   }
-  return false;
+  return tag;
 }
+
+__device__ bool pwd_file_is_under_curr_dir_index(FileSystem *fs, int file_index) {
+  int pwd_fcb_index = pwd_get(); // get the fcb index of the current directory file
+  int addr = fs->FILE_BASE_ADDRESS + fs->BLOCK_SIZE * fcb_get_start(fs, pwd_fcb_index);
+  bool tag = false;  
+  for (int i = 0; i < 50; i++)
+  {
+    // read the index of the file fcb from the directory file blocks
+    u16 *index_ptr = (u16 *)&fs->volume[addr + 2*i];
+    if (*index_ptr != 0) {                                
+      int index = (int)*index_ptr;
+      if (index == file_index) {
+        tag = true;
+        break;
+      }
+    }    
+  }
+  return tag;
+}
+
+__device__ void printf_pwd(FileSystem *fs) {
+  bool tag = false;
+    for(int i=1; i<4; i++){
+      if (gpwd[i] != -1) {
+        tag = true;
+        printf("/%s", fcb_get_name(fs, gpwd[i]));
+      }
+    }
+    if (!tag) printf("/");
+    printf("\n");
+}
+
+
+__device__ void printf_ls(FileSystem *fs) {
+  int pwd_fcb_index = pwd_get(); // get the fcb index of the current directory file
+  int addr = fs->FILE_BASE_ADDRESS + fs->BLOCK_SIZE * fcb_get_start(fs, pwd_fcb_index);
+  for (int i = 0; i < 50; i++)
+  {
+    // read the index of the file fcb from the directory file blocks
+    u16 *index_ptr = (u16 *)&fs->volume[addr + 2*i];
+    if (*index_ptr != 0) {                                
+      int index = (int)*index_ptr;
+      printf("%d ", index);
+    }    
+  }
+  printf("\n");
+  return;
+}
+
 // return a 50 entry list which stores index of fcb
 __device__ void ls_get(FileSystem *fs, int* list) {
   int pwd_fcb_index = pwd_get();
@@ -597,8 +754,7 @@ __device__ void compact(FileSystem *fs)
         }
       }
     }
-    // printf("target_start = %d, start = %d,\n", target_start, start);
-    // printf("index = %d\n", index);
+
     if (start == fs->FCB_ENTRIES*fs->FCB_SIZE) { // doesn't find blocks needed to be compacted
       return;
     }
@@ -613,7 +769,6 @@ __device__ void compact(FileSystem *fs)
         handler |= (u16)fcb_get_start(fs, index); // start block index
         uchar buffer[1024];
         fs_read(fs, buffer, size, handler);
-        // printf("index = %d || buffer = %d\n", index, buffer[0]);
 
         // clear VCB and file blocks
         int occupied_blocks = (size + fs->BLOCK_SIZE -1) / fs->BLOCK_SIZE;
@@ -781,6 +936,23 @@ __device__ int fcb_use_name_retrieve_index(FileSystem *fs, char *name){
     {
       target_fcb_index = i;
       break;
+    }
+  }
+  if (target_fcb_index == -1) // not find the target
+  { 
+    printf("target file do not exist!\n");
+  }
+  return target_fcb_index;
+}
+
+__device__ int fcb_use_name_retrieve_latest_index(FileSystem *fs, char *name){
+  int target_fcb_index = -1;
+  for (int i = 0; i < fs->FCB_ENTRIES; i++)
+  {
+    // printf("%s v.s. %s\n",name, fcb_get_name(fs, i));
+    if ((fcb_get_validbit(fs, i)) && (cmp_str(fcb_get_name(fs, i), name)) && fcb_get_createtime(fs, i) == (gtime_c-1))
+    {
+      target_fcb_index = i;
     }
   }
   if (target_fcb_index == -1) // not find the target

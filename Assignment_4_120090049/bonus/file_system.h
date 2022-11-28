@@ -50,6 +50,9 @@ __device__ u32 fs_open(FileSystem *fs, char *s, int op);
 __device__ void fs_read(FileSystem *fs, uchar *output, u32 size, u32 fp);
 __device__ u32 fs_write(FileSystem *fs, uchar *input, u32 size, u32 fp);
 __device__ void fs_gsys(FileSystem *fs, int op);
+__device__ void remove_file(FileSystem *fs, char *file_name);
+__device__ void cd_name(FileSystem *fs, char *file_name);
+__device__ void cd_index(FileSystem *fs, int index);
 __device__ void fs_gsys(FileSystem *fs, int op, char *s);
 
 
@@ -61,6 +64,9 @@ __device__ void printf_list(int* list);
 // functions for pwd
 __device__ int pwd_get(void);
 __device__ bool pwd_file_is_under_curr_dir(FileSystem *fs, char* file_name);
+__device__ bool pwd_file_is_under_curr_dir_index(FileSystem *fs, int file_index);
+__device__ void printf_pwd(FileSystem *fs);
+__device__ void printf_ls(FileSystem *fs) ;
 __device__ void ls_get(FileSystem *fs, int* list);
 
 // major functions
@@ -81,6 +87,7 @@ __device__ bool vcb_get(FileSystem *fs, int block_index) ;
 
 // FCB
 __device__ int fcb_use_name_retrieve_index(FileSystem *fs, char *name);
+__device__ int fcb_use_name_retrieve_latest_index(FileSystem *fs, char *name);
 __device__ void printf_fcb(FileSystem *fs, int index);
 __device__ bool cmp_str(char *str1, char *str2);
 

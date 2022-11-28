@@ -36,7 +36,7 @@ soft 24 d
 t.txt 32
 b.txt 32
 app 17 d                  6+6+5
-===sort by file size===   /app
+===sort by file size===   /app  remove /soft
 a.txt 64
 b.txt 32
 ===sort by file size===  /

@@ -5,20 +5,20 @@ b.txt
 t.txt 32
 b.txt 32
 ===sorted by modified time===
+app d
 t.txt
 b.txt
-app
 ===sorted by file size===
 t.txt 32
 b.txt 32
-app 0
+app 0 d
 ===sorted by file size===
 ===sorted by file size===
 a.txt 64
-soft 0
+soft 0 d
 ===sorted by modified time===
+soft d
 a.txt
-soft
 /app/soft/
 ===sorted by file size===
 B.txt 1024
@@ -34,4 +34,4 @@ A.txt 64
 ===sorted by file size===
 t.txt 32
 b.txt 32
-app 11
+app 11 d

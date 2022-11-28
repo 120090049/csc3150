@@ -57,7 +57,7 @@ __device__ void fs_gsys(FileSystem *fs, int op, char *s);
 ///////////////////
 
 // utils
-
+__device__ void printf_list(int* list);
 // functions for pwd
 __device__ int pwd_get(void);
 __device__ bool pwd_file_is_under_curr_dir(FileSystem *fs, char* file_name);

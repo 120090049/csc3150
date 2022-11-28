@@ -63,6 +63,15 @@ __device__ bool num_in_list(int num, int* list)
   return false;
 }
 
+__device__ void printf_list(int* list) 
+{
+	for (int i=0; i<50; i++) {
+		printf("%d  ", list[i]);
+	}
+	printf("\n----------------------\n");
+	return;
+}
+
 // init FCB
 //   FCB:
 //   0-19   name
@@ -78,13 +87,24 @@ __device__ u32 fs_open(FileSystem *fs, char *file_name, int op)
   int target_fcb_index = -1;
   for (int i = 0; i < fs->FCB_ENTRIES; i++)
   {
-    if ((fcb_get_validbit(fs, i)) && (cmp_str(fcb_get_name(fs, i), file_name)))
+    if ((fcb_get_validbit(fs, i)) && (cmp_str(fcb_get_name(fs, i), file_name)) )
     {
       target_fcb_index = i;
       break;
     }
   }
 
+  // for (int i=0; i<50; i++) {
+  //   if (cmp_str(file_name, fcb_get_name(fs, ls[i]))) {
+  //     tag = true;
+  //   }
+  // }
+  // printf("%s is %d\n\n\n", file_name, tag);
+
+  // if (!pwd_file_is_under_curr_dir(fs, file_name)){
+  //   target_fcb_index = -1;
+  // }
+  //printf("lala %\n", target_fcb_index);
   if (target_fcb_index == -1)
   { // not find the target
     for (int i = 0; i < fs->FCB_ENTRIES; i++)
@@ -113,6 +133,8 @@ __device__ u32 fs_open(FileSystem *fs, char *file_name, int op)
 
     if (op == G_PWD) {
       fcb_set_dir(fs, target_fcb_index);
+      fcb_set_modifytime(fs, target_fcb_index,  gtime_m);
+      gtime_m ++;
       // fcb_set_size(fs, target_fcb_index, 1024);
       int start_index_in_fileblocks = allocate(fs, fs->BLOCK_SIZE);
       fcb_set_start(fs, target_fcb_index, start_index_in_fileblocks);
@@ -357,7 +379,12 @@ __device__ void fs_gsys(FileSystem *fs, int op)
       {
         char *filename;
         filename = fcb_get_name(fs, target_fcb_index);
-        printf("%s\n", filename);
+        if (fcb_check_dir(fs, target_fcb_index)) {
+          printf("%s d\n", filename);
+        }
+        else {
+          printf("%s\n", filename);
+        }
       }
     }
   }
@@ -417,7 +444,12 @@ __device__ void fs_gsys(FileSystem *fs, int op)
             int FCB_index = list_for_equal_size[i];
             bool tag = pwd_file_is_under_curr_dir(fs, fcb_get_name(fs, FCB_index) );
             if (tag && (FCB_index != 0)) {
-              printf("%s %d\n", fcb_get_name(fs, FCB_index), fcb_get_size(fs, FCB_index));
+              if (fcb_check_dir(fs, FCB_index)){
+                printf("%s %d d\n", fcb_get_name(fs, FCB_index), fcb_get_size(fs, FCB_index));
+              }
+              else {
+                printf("%s %d\n", fcb_get_name(fs, FCB_index), fcb_get_size(fs, FCB_index));
+              }
             }
           }
         }
@@ -483,7 +515,7 @@ __device__ void fs_gsys(FileSystem *fs, int op, char *file_name)
     fs_open(fs, file_name, G_PWD);
     return;
   }
-  else if (op = CD) {
+  else if (op == CD) {
     if (pwd_file_is_under_curr_dir(fs, file_name)) {
       int fcb_index_of_target_dir = fcb_use_name_retrieve_index(fs, file_name);
       if (!fcb_check_dir(fs, fcb_index_of_target_dir)){
@@ -526,11 +558,11 @@ __device__ int pwd_get(void) {
 }
 
 __device__ bool pwd_file_is_under_curr_dir(FileSystem *fs, char* file_name) {
-  int fcb_index_of_target_file = fcb_use_name_retrieve_index(fs, file_name);
+  
   int ls[50];
   ls_get(fs, ls);
   for (int i=0; i<50; i++) {
-    if (ls[i] == fcb_index_of_target_file) {
+    if (cmp_str(file_name, fcb_get_name(fs, ls[i]))) {
       return true;
     }
   }
